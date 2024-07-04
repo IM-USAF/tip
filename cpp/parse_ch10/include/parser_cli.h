@@ -71,6 +71,7 @@ inline bool ConfigureParserCLI(CLIGroup& cli_group, ParserConfigParams& config,
     cli->AddOption("--disable_videof0", "", disable_videof0_help, false, config.disable_videof0_);
     cli->AddOption("--disable_eth0", "", disable_eth0_help, false, config.disable_eth0_);
     cli->AddOption("--disable_arinc0", "", disable_arinc0_help, false, config.disable_arinc0_);
+    cli->AddOption("--disable_pcmf1", "", disable_pcmf1_help, false, config.disable_pcmf1_);
 
     if(!cli_group.CheckConfiguration())
         return false;

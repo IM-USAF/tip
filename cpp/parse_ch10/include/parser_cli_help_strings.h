@@ -33,7 +33,10 @@ const std::string disable_eth0_help =
 
 const std::string disable_arinc0_help = 
     R"(Disable parsing of ARINC429_FORMAT0 packets)";
-                                         
+
+const std::string disable_pcmf1_help = 
+    R"(Disable parsing of PCM_F1 packets)";
+
 const std::string chunk_bytes_help =
     R"(Quantity of bytes, in units of millions, ingested for parsing by each worker thread. Must be 
        in range [135, 1000].)";

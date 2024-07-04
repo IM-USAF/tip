@@ -124,7 +124,7 @@ class Ch101553F1Component : public Ch10PacketComponent
         const MilStd1553F1StatusWordFmt*& word2) const
     { word1 = status_word1_; word2 = status_word2_; }
 
-    virtual Ch10Status Parse(const uint8_t*& data);
+    Ch10Status Parse(const uint8_t*& data) override;
 
     /*
 	Parse all of the messages in the body of the 1553 packet that

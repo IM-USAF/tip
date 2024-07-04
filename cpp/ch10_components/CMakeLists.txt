@@ -13,6 +13,7 @@ set(headers
     include/ch10_tmats_component.h
     include/ch10_videof0_component.h
     include/ch10_arinc429f0_component.h
+    include/ch10_pcmf1_component.h
 )
 
 add_library(ch10comp 
@@ -28,6 +29,7 @@ add_library(ch10comp
     src/ch10_tmats_component.cpp
     src/ch10_videof0_component.cpp
     src/ch10_arinc429f0_component.cpp
+    src/ch10_pcmf1_component.cpp
 )
 
 target_compile_features(ch10comp PUBLIC cxx_std_17)

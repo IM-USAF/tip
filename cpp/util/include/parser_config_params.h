@@ -20,6 +20,7 @@ class ParserConfigParams
     bool disable_videof0_;
     bool disable_eth0_;
     bool disable_arinc0_;
+    bool disable_pcmf1_;
     std::map<std::string, std::string> ch10_packet_type_map_;
     std::map<Ch10PacketType, bool> ch10_packet_enabled_map_;
     int parse_chunk_bytes_;
@@ -34,7 +35,8 @@ class ParserConfigParams
         max_chunk_read_count_(0), worker_offset_wait_ms_(0), worker_shift_wait_ms_(0),
         stdout_log_level_(""), file_log_level_(""),
         input_path_str_(""), output_path_str_(""), log_path_str_(""), disable_1553f1_(false),
-        disable_videof0_(false), disable_eth0_(false), disable_arinc0_(false)
+        disable_videof0_(false), disable_eth0_(false), disable_arinc0_(false),
+        disable_pcmf1_(false)
     {}
 
     bool operator==(const ParserConfigParams& rhs) const
@@ -54,7 +56,8 @@ class ParserConfigParams
             (this->worker_offset_wait_ms_ == rhs.worker_offset_wait_ms_) &&
             (this->worker_shift_wait_ms_ == rhs.worker_shift_wait_ms_) &&
             (this->stdout_log_level_ == rhs.stdout_log_level_) &&
-            (this->file_log_level_ == rhs.file_log_level_));
+            (this->file_log_level_ == rhs.file_log_level_) &&
+            (this->disable_pcmf1_ == rhs.disable_pcmf1_));
     }
 
     /*
@@ -132,6 +135,7 @@ class ParserConfigParams
         ch10_packet_enabled_map_[Ch10PacketType::VIDEO_DATA_F0] = !disable_videof0_;
         ch10_packet_enabled_map_[Ch10PacketType::ETHERNET_DATA_F0] = !disable_eth0_;
         ch10_packet_enabled_map_[Ch10PacketType::ARINC429_F0] = !disable_arinc0_;
+        ch10_packet_enabled_map_[Ch10PacketType::PCM_F1] = !disable_pcmf1_;
 
         for(std::map<Ch10PacketType, bool>::const_iterator it = ch10_packet_enabled_map_.cbegin();
             it != ch10_packet_enabled_map_.cend(); ++it)

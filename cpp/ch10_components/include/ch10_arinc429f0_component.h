@@ -65,7 +65,7 @@ class Ch10429F0Component : public Ch10PacketComponent
     {
     }
 
-    virtual Ch10Status Parse(const uint8_t*& data);
+    Ch10Status Parse(const uint8_t*& data) override;
 
     /*
 	Parse all of the ARINC429 words in the body of the ch10 429 packet that
