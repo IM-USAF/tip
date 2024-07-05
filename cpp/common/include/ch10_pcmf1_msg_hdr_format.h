@@ -13,11 +13,19 @@ class PCMF1CSDWFmt
     uint32_t sync_offset : 18;
 
     // Indicates whether alignment, throughput, packed, or
-    // unpacked mode.
-    uint32_t mode : 6;
+    // unpacked mode -- mutually exclusive.
+    // uint32_t mode : 6;
+    uint32_t mode_unpacked : 1;
+    uint32_t mode_packed : 1;
+    uint32_t mode_throughput : 1;
+    uint32_t mode_align : 1;  // 0 = 16-bit, 1 = 32-bit
+    uint32_t : 2;
 
     // Lock status of the frame synchronizer. NA for throughput mode.
-    uint32_t lockst : 4;
+    // uint32_t lockst : 4;
+    uint32_t majfstat : 2;
+    uint32_t minfstat : 2;
+
 
     // Minor frame indicator. NA for throughput mode.
     uint32_t MI : 1;
@@ -28,31 +36,6 @@ class PCMF1CSDWFmt
     // Determines if IPH is included or omitted. 
     uint32_t IPH : 1;
     uint32_t : 1;
-};
-
-class PCMF1CSDWModeFmt
-{
-    public:
-    
-    uint8_t unpacked : 1;
-    uint8_t packed : 1;
-    uint8_t throughput : 1;
-
-    // 0 = 16-bit alignment, 1 = 32-bit alignment 
-    uint8_t alignment : 1;
-};
-
-class PCMF1CSDWLockstFmt
-{
-    public:
-
-    // Major frame status: 0 = not locked, 2 = major frame check 
-    // (after losing lock), 3 = major frame lock
-    uint8_t majfstat : 2; 
-
-    // Minor frame status: 2 = minor frame check (after losing lock), 
-    // 3 = minor frame lock
-    uint8_t minfstat : 2; 
 };
 
 class PCMF1IPDH16Fmt

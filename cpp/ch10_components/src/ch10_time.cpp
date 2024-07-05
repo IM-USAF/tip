@@ -28,6 +28,8 @@ Ch10Status Ch10Time::ParseSecondaryHeaderTime(const uint8_t*& data, uint8_t time
         case 0:
         {
             ParseBinaryWeightedTime(data, time_ns);
+            SPDLOG_WARN("Binary Weighted Time is being used. "
+                "Validate Ch10BinWtTimeStampFmt (ch10_time.h) struct and result!");
             break;
         }
         case 1:
