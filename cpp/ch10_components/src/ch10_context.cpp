@@ -251,6 +251,7 @@ void Ch10Context::CreateDefaultPacketTypeConfig(std::unordered_map<Ch10PacketTyp
     input[Ch10PacketType::VIDEO_DATA_F0] = true;
     input[Ch10PacketType::ETHERNET_DATA_F0] = true;
     input[Ch10PacketType::ARINC429_F0] = true;
+    input[Ch10PacketType::PCM_F1] = true;
 }
 
 bool Ch10Context::SetPacketTypeConfig(const std::map<Ch10PacketType, bool>& user_config,
