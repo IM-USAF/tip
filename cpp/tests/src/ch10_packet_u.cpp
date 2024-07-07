@@ -38,13 +38,14 @@ class Ch10PacketTest : public ::testing::Test
     NiceMock<MockCh10EthernetF0Component> mock_eth_;
     NiceMock<MockCh10429F0Component> mock_arinc429_;
     Ch10Packet p_;
+    uint64_t abs_pos_;
+    bool found_tmats_;
 
     Ch10PacketTest() : status_(Ch10Status::NONE), mock_bb_(), mock_ctx_(), mock_ch10_time_(),
         p_(&mock_bb_, &mock_ctx_, &mock_ch10_time_),
         mock_tmats_(&mock_ctx_), mock_tdp_(&mock_ctx_), mock_milstd1553_(&mock_ctx_), mock_vid_(&mock_ctx_),
         mock_eth_(&mock_ctx_), mock_arinc429_(&mock_ctx_), mock_hdr_(&mock_ctx_)
-    {
-    }
+    {}
 
     virtual void SetUp()
     {
@@ -423,7 +424,9 @@ TEST_F(Ch10PacketTest, ParseBodyComputerGeneratedDataF1)
     EXPECT_CALL(mock_ctx_, IsPacketTypeEnabled(Ch10PacketType::COMPUTER_GENERATED_DATA_F1))
         .WillOnce(Return(false));
 
-    p_.ParseBody();
+    abs_pos_ = 0;
+    found_tmats_ = false;
+    p_.ParseBody(abs_pos_, found_tmats_);
     EXPECT_EQ(Ch10PacketType::NONE, p_.current_pkt_type);
 
     EXPECT_CALL(mock_hdr_, GetHeader()).WillOnce(Return(&hdr_fmt));
@@ -431,7 +434,7 @@ TEST_F(Ch10PacketTest, ParseBodyComputerGeneratedDataF1)
         .WillOnce(Return(true));
     EXPECT_CALL(mock_tmats_, Parse(_)).WillOnce(Return(Ch10Status::OK));
 
-    p_.ParseBody();
+    p_.ParseBody(abs_pos_, found_tmats_);
     EXPECT_EQ(Ch10PacketType::COMPUTER_GENERATED_DATA_F1, p_.current_pkt_type);
 }
 
@@ -443,7 +446,9 @@ TEST_F(Ch10PacketTest, ParseBodyTimeDataF1)
     EXPECT_CALL(mock_ctx_, IsPacketTypeEnabled(Ch10PacketType::TIME_DATA_F1))
         .WillOnce(Return(false));
 
-    p_.ParseBody();
+    abs_pos_ = 38382880;
+    found_tmats_ = false;
+    p_.ParseBody(abs_pos_, found_tmats_);
     EXPECT_EQ(Ch10PacketType::NONE, p_.current_pkt_type);
 
     EXPECT_CALL(mock_hdr_, GetHeader()).WillOnce(Return(&hdr_fmt));
@@ -451,7 +456,7 @@ TEST_F(Ch10PacketTest, ParseBodyTimeDataF1)
         .WillOnce(Return(true));
     EXPECT_CALL(mock_tdp_, Parse(_)).WillOnce(Return(Ch10Status::OK));
 
-    p_.ParseBody();
+    p_.ParseBody(abs_pos_, found_tmats_);
     EXPECT_EQ(Ch10PacketType::TIME_DATA_F1, p_.current_pkt_type);
 }
 
@@ -463,7 +468,9 @@ TEST_F(Ch10PacketTest, ParseBodyMilStd1553F1)
     EXPECT_CALL(mock_ctx_, IsPacketTypeEnabled(Ch10PacketType::MILSTD1553_F1))
         .WillOnce(Return(false));
 
-    p_.ParseBody();
+    abs_pos_ = 38382880;
+    found_tmats_ = false;
+    p_.ParseBody(abs_pos_, found_tmats_);
     EXPECT_EQ(Ch10PacketType::NONE, p_.current_pkt_type);
 
     EXPECT_CALL(mock_hdr_, GetHeader()).WillOnce(Return(&hdr_fmt));
@@ -471,7 +478,7 @@ TEST_F(Ch10PacketTest, ParseBodyMilStd1553F1)
         .WillOnce(Return(true));
     EXPECT_CALL(mock_milstd1553_, Parse(_)).WillOnce(Return(Ch10Status::OK));
 
-    p_.ParseBody();
+    p_.ParseBody(abs_pos_, found_tmats_);
     EXPECT_EQ(Ch10PacketType::MILSTD1553_F1, p_.current_pkt_type);
 }
 
@@ -483,7 +490,9 @@ TEST_F(Ch10PacketTest, ParseBodyVideoF0)
     EXPECT_CALL(mock_ctx_, IsPacketTypeEnabled(Ch10PacketType::VIDEO_DATA_F0))
         .WillOnce(Return(false));
 
-    p_.ParseBody();
+    abs_pos_ = 38382880;
+    found_tmats_ = false;
+    p_.ParseBody(abs_pos_, found_tmats_);
     EXPECT_EQ(Ch10PacketType::NONE, p_.current_pkt_type);
 
     EXPECT_CALL(mock_hdr_, GetHeader()).WillOnce(Return(&hdr_fmt));
@@ -492,7 +501,7 @@ TEST_F(Ch10PacketTest, ParseBodyVideoF0)
     EXPECT_CALL(mock_vid_, Parse(_)).WillOnce(Return(Ch10Status::OK));
     EXPECT_CALL(mock_ctx_, RecordMinVideoTimeStamp(_)).WillOnce(Return());
 
-    p_.ParseBody();
+    p_.ParseBody(abs_pos_, found_tmats_);
     EXPECT_EQ(Ch10PacketType::VIDEO_DATA_F0, p_.current_pkt_type);
 }
 
@@ -504,7 +513,9 @@ TEST_F(Ch10PacketTest, ParseBodyEthernetF0)
     EXPECT_CALL(mock_ctx_, IsPacketTypeEnabled(Ch10PacketType::ETHERNET_DATA_F0))
         .WillOnce(Return(false));
 
-    p_.ParseBody();
+    abs_pos_ = 38382880;
+    found_tmats_ = false;
+    p_.ParseBody(abs_pos_, found_tmats_);
     EXPECT_EQ(Ch10PacketType::NONE, p_.current_pkt_type);
 
     EXPECT_CALL(mock_hdr_, GetHeader()).WillOnce(Return(&hdr_fmt));
@@ -512,7 +523,7 @@ TEST_F(Ch10PacketTest, ParseBodyEthernetF0)
         .WillOnce(Return(true));
     EXPECT_CALL(mock_eth_, Parse(_)).WillOnce(Return(Ch10Status::OK));
 
-    p_.ParseBody();
+    p_.ParseBody(abs_pos_, found_tmats_);
     EXPECT_EQ(Ch10PacketType::ETHERNET_DATA_F0, p_.current_pkt_type);
 }
 
@@ -524,7 +535,9 @@ TEST_F(Ch10PacketTest, ParseBody429F0)
     EXPECT_CALL(mock_ctx_, IsPacketTypeEnabled(Ch10PacketType::ARINC429_F0))
         .WillOnce(Return(false));
 
-    p_.ParseBody();
+    abs_pos_ = 38382880;
+    found_tmats_ = false;
+    p_.ParseBody(abs_pos_, found_tmats_);
     EXPECT_EQ(Ch10PacketType::NONE, p_.current_pkt_type);
 
     EXPECT_CALL(mock_hdr_, GetHeader()).WillOnce(Return(&hdr_fmt));
@@ -532,7 +545,7 @@ TEST_F(Ch10PacketTest, ParseBody429F0)
         .WillOnce(Return(true));
     EXPECT_CALL(mock_arinc429_, Parse(_)).WillOnce(Return(Ch10Status::OK));
 
-    p_.ParseBody();
+    p_.ParseBody(abs_pos_, found_tmats_);
     EXPECT_EQ(Ch10PacketType::ARINC429_F0, p_.current_pkt_type);
 }
 
@@ -544,13 +557,89 @@ TEST_F(Ch10PacketTest, ParseBodyDefault)
     EXPECT_CALL(mock_ctx_, RegisterUnhandledPacketType(Ch10PacketType::NONE))
         .WillOnce(Return(false));
 
-    p_.ParseBody();
+    abs_pos_ = 38382880;
+    found_tmats_ = false;
+    p_.ParseBody(abs_pos_, found_tmats_);
     EXPECT_EQ(Ch10PacketType::NONE, p_.current_pkt_type);
 
     EXPECT_CALL(mock_hdr_, GetHeader()).WillRepeatedly(Return(&hdr_fmt));
     EXPECT_CALL(mock_ctx_, RegisterUnhandledPacketType(Ch10PacketType::NONE))
         .WillOnce(Return(true));
 
-    p_.ParseBody();
+    p_.ParseBody(abs_pos_, found_tmats_);
     EXPECT_EQ(Ch10PacketType::NONE, p_.current_pkt_type);
+}
+
+TEST_F(Ch10PacketTest, TmatsStatusSecondaryWorkerCurrTMATs)
+{
+    // non-zero indicates a ssecondary worker, i.e., not the first
+    // worker which is expected to find TMATS as the first packet.
+    abs_pos_ = 388282; 
+
+    // a new worker will always initialize found_tmats to false.
+    found_tmats_ = false;
+    ASSERT_EQ(p_.TmatsStatus(abs_pos_, found_tmats_, true), 
+        Ch10Status::TMATS_PKT_ERR);
+
+    // However, just in case, TMATs shouldn't be found by a secondary
+    // worker in any conditions.
+    found_tmats_ = true;
+    ASSERT_EQ(p_.TmatsStatus(abs_pos_, found_tmats_, true), 
+        Ch10Status::TMATS_PKT_ERR);
+}
+
+TEST_F(Ch10PacketTest, TmatsStatusSecondaryWorkerNotCurrTMATs)
+{
+    // non-zero indicates a ssecondary worker, i.e., not the first
+    // worker which is expected to find TMATS as the first packet.
+    abs_pos_ = 388282; 
+
+    // a new worker will always initialize found_tmats to false.
+    found_tmats_ = false;
+    ASSERT_EQ(p_.TmatsStatus(abs_pos_, found_tmats_, false), 
+        Ch10Status::OK);
+}
+
+TEST_F(Ch10PacketTest, TmatsStatusFirstWorkerCurrTMATsNotFound)
+{
+    // 0 indicates first worker
+    abs_pos_ = 0; 
+
+    // a new worker will always initialize found_tmats to false.
+    found_tmats_ = false;
+    ASSERT_EQ(p_.TmatsStatus(abs_pos_, found_tmats_, true), Ch10Status::OK);
+}
+
+TEST_F(Ch10PacketTest, TmatsStatusFirstWorkerCurrTMATsFound)
+{
+    // 0 indicates first worker
+    abs_pos_ = 0; 
+
+    // TMATS has been previously found by the current worker. That's 
+    // ok because multiple multiple tmats packets are possible. 
+    found_tmats_ = true;
+    ASSERT_EQ(p_.TmatsStatus(abs_pos_, found_tmats_, true), Ch10Status::OK);
+}
+
+TEST_F(Ch10PacketTest, TmatsStatusFirstWorkerNotCurrTMATsFound)
+{
+    // 0 indicates first worker
+    abs_pos_ = 0; 
+
+    // TMATS has been previously found by the current worker. That's 
+    // ok because multiple multiple tmats packets are possible. 
+    found_tmats_ = true;
+    ASSERT_EQ(p_.TmatsStatus(abs_pos_, found_tmats_, false), Ch10Status::TMATS_PKT);
+}
+
+TEST_F(Ch10PacketTest, TmatsStatusFirstWorkerNotCurrTMATsNotFound)
+{
+    // 0 indicates first worker
+    abs_pos_ = 0; 
+
+    // TMATS has not been previously found by the current worker 
+    // and the current packet is not tmats. ch10 requires the first
+    // packet to be tmats so this violates the standard.    
+    found_tmats_ = false;
+    ASSERT_EQ(p_.TmatsStatus(abs_pos_, found_tmats_, false), Ch10Status::TMATS_PKT_ERR);
 }

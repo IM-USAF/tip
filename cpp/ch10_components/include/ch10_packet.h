@@ -183,8 +183,41 @@ class Ch10Packet
     /*
     The primary purpose of this function is to call the correct parser
     for the packet type indicated in the header.
+
+ 	Args:
+		abs_pos 	--> File read starting position in bytes of
+						the current worker
+		found_tmats	--> Boolean indicates if at least one tmats 
+						packet has been parsed. VAlue is also set
+						by this function.
+    Return:
+        Ch10Status
     */
-    void ParseBody();
+    Ch10Status ParseBody(const uint64_t& abs_pos, bool& found_tmats);
+
+
+	/*
+	Logic for deciding if tmats has been read completely by the 
+	first worker or if an error has occurred. 
+
+	Args:
+		abs_pos 	--> File read starting position in bytes of
+						the current worker
+		found_tmats	--> Boolean indicates if at least one tmats 
+						packet has been parsed. VAlue is also set
+						by this function.
+        curr_tmats  --> Boolean indicates if the current packet
+                        header is tmats 
+		
+	Return:
+        Ch10Status: OK = continue parsing as normal, TMATS_PKT =
+        TMATS packet found and no current worker should stop parsing, 
+        TMATS_PKT_ERR = error related to TMATS.
+	*/
+	Ch10Status TmatsStatus(const uint64_t& abs_pos, bool& found_tmats, 
+        bool curr_tmats);
+
+
 };
 
 #endif

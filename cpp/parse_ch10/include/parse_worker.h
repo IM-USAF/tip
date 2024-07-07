@@ -5,7 +5,7 @@
 Execute ch10 parsing on a chunk of binary data using
 parser_rewrite lib.
 */
-
+#include <cstdint>
 #include <string>
 #include <cstdio>
 #include <set>
@@ -31,6 +31,10 @@ class ParseWorker
 	
 	// Return code from operator() function
 	std::atomic<int> retval_;
+
+	// Record initial starting position to avoid passing around the
+	// worker_config or the value itself. 
+	uint64_t abs_start_position_; 
 
    public:
     ParseWorker();
@@ -89,8 +93,12 @@ class ParseWorker
 		bb			--> Pointer to BinBuff instance loaded with Ch10 binary data
 		tmats_vec	--> Reference to vector of strings in which to append
 						found TMATs data
+	Return:
+		0 if no error, otherwise 1.
 	*/
-    void ParseBufferData(Ch10Context* ctx, BinBuff* bb);
+    int ParseBufferData(Ch10Context* ctx, BinBuff* bb);
+
+
 };
 
 #endif

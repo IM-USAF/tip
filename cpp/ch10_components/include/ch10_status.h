@@ -34,6 +34,8 @@ enum class Ch10Status : uint8_t
     ARINC429F0_PARITY_ERROR,
     ARINC429F0_FORMAT_ERROR,
     ARINC429F0_GAP_TIME_ERROR,
+    TMATS_PKT,
+    TMATS_PKT_ERR,
 };
 
 const std::unordered_map<Ch10Status, std::string> ch10status_to_string_map = {
@@ -57,7 +59,9 @@ const std::unordered_map<Ch10Status, std::string> ch10status_to_string_map = {
     {Ch10Status::MILSTD1553_MSG_LENGTH, "MILSTD1553_MSG_LENGTH"},
     {Ch10Status::ARINC429F0_PARITY_ERROR, "ARINC429F0_PARITY_ERROR"},
     {Ch10Status::ARINC429F0_FORMAT_ERROR, "ARINC429F0_FORMAT_ERROR"},
-    {Ch10Status::ARINC429F0_GAP_TIME_ERROR, "ARINC429F0_GAP_TIME_ERROR"}};
+    {Ch10Status::ARINC429F0_GAP_TIME_ERROR, "ARINC429F0_GAP_TIME_ERROR"},
+    {Ch10Status::TMATS_PKT, "TMATS_PKT"},
+    {Ch10Status::TMATS_PKT_ERR, "TMATS_PKT_ERR"}};
 
 std::string Ch10StatusString(const Ch10Status& status);
 

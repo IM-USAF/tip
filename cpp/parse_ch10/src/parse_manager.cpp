@@ -170,6 +170,10 @@ int ParseManager::StartThreads(bool append_mode,
     bool thread_started = false;
     uint64_t total_read_pos = 0;
 
+    uint16_t worker_ind = 0;
+    if(append_mode)
+        worker_ind++;
+
     spdlog::get("pm_logger")->debug("StartThreads: Starting worker threads");
     for (uint16_t worker_ind = 0; worker_ind < effective_worker_count; worker_ind++)
     {
@@ -206,7 +210,17 @@ int ParseManager::ActivateInitialThread(ParseManagerFunctions* pmf, bool append_
             return EX_SOFTWARE;
 
         active_thread_count += 1;
-        read_pos += work_unit->GetReadBytes();
+
+        // The first worker reads TMATs only. In this case the next
+        // worker should start immediately where the first worker
+        // ends. Note that worker_index should never be 0 for append
+        // mode since the first worker stops on a packet boundary
+        // immediately after reading TMATs. Thus append mode is
+        // only valid for the second worker and the following workers.
+        if(worker_index == 0)
+            read_pos = work_unit->conf_.last_position_;
+        else
+            read_pos += work_unit->GetReadBytes();
         thread_started = true;
 
         if (!append_mode)

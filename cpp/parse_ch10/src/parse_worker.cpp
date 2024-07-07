@@ -1,7 +1,7 @@
 // parse_worker.cpp
 #include "parse_worker.h"
 
-ParseWorker::ParseWorker() : complete_(false), retval_(0)
+ParseWorker::ParseWorker() : complete_(false), retval_(0), abs_start_position_(0)
 {
 }
 
@@ -22,6 +22,7 @@ void ParseWorker::operator()(WorkerConfig& worker_config, Ch10Context* ctx)
     // created in the ParseWorker constructor is persistent until the
     // ParseWorker instance is garbage-collected to maintain/retain file
     // writer state.
+    abs_start_position_ = worker_config.start_position_;
     ctx->Initialize(worker_config.start_position_, worker_config.worker_index_);
     ctx->SetSearchingForTDP(!worker_config.append_mode_);
 
@@ -31,7 +32,7 @@ void ParseWorker::operator()(WorkerConfig& worker_config, Ch10Context* ctx)
         return;
     }
 
-    ParseBufferData(ctx, worker_config.bb_);
+    retval_ = ParseBufferData(ctx, worker_config.bb_);
 
     // Update last_position_;
     worker_config.last_position_ = ctx->absolute_position;
@@ -52,7 +53,6 @@ void ParseWorker::operator()(WorkerConfig& worker_config, Ch10Context* ctx)
     worker_config.bb_->Clear();
 
     complete_ = true;
-    retval_ = 0;
 }
 
 std::atomic<bool>& ParseWorker::CompletionStatus()
@@ -96,7 +96,7 @@ int ParseWorker::ConfigureContext(Ch10Context* ctx,
     return EX_OK;
 }
 
-void ParseWorker::ParseBufferData(Ch10Context* ctx, BinBuff* bb)
+int ParseWorker::ParseBufferData(Ch10Context* ctx, BinBuff* bb)
 {
     Ch10PacketHeaderComponent header(ctx);
     Ch10TMATSComponent tmats(ctx);
@@ -118,11 +118,12 @@ void ParseWorker::ParseBufferData(Ch10Context* ctx, BinBuff* bb)
     Ch10Packet packet(bb, ctx, &ch10time);
     packet.SetCh10ComponentParsers(&header, &tmats, &tdp, &milstd1553, &vid, &eth, &arinc429);
     if(!packet.IsConfigured())
-        return;
+        return 1;
 
     // Parse packets until error or end of buffer.
     bool continue_parsing = true;
     Ch10Status status;
+    bool found_tmats = false;
     while (continue_parsing)
     {
         status = packet.ParseHeader();
@@ -137,6 +138,32 @@ void ParseWorker::ParseBufferData(Ch10Context* ctx, BinBuff* bb)
         }
 
         // Parse body if the header is parsed and validated.
-        packet.ParseBody();
+        status = packet.ParseBody(abs_start_position_, found_tmats);
+        if(status == Ch10Status::TMATS_PKT)
+            continue_parsing = false;
+        else if(status == Ch10Status::TMATS_PKT_ERR)
+        {
+            SPDLOG_ERROR("TMATS packer error: MAKE THIS A BETTER LOG ITEM LATER!!");
+            return 1;
+        }
+        // The very first worker will parse the ch10 initial matter, 
+        // which includes TMATS. It should stop immediately after all
+        // TMATS packets are parsed and return. If the initial absolute
+        // position of the data of which the worker ingests is not zero, 
+        // then it must not be the first worker and the presence of the 
+        // TMATS packet is an error. 
+        // if(abs_start_position_ == 0)
+        // {
+
+        // }
+        // if(packet.current_pkt_type == Ch10PacketType::COMPUTER_GENERATED_DATA_F1)
+        // {
+        //     found_tmats = true;
+        //     if(abs_start_position_ != 0)
+        //         SPDLOG_ERROR("TMATS packet found with worker starting at abs position {:d}", 
+        //             abs_start_position_);
+            
+        // }
     }
+    return 0;
 }

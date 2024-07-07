@@ -252,7 +252,7 @@ Ch10Status Ch10Packet::ParseHeader()
     return ctx_->ContinueWithPacketType(hdr->data_type);
 }
 
-void Ch10Packet::ParseBody()
+Ch10Status Ch10Packet::ParseBody(const uint64_t& abs_pos, bool& found_tmats)
 {
     // Note: to test this function, it will be easiest to add a function to
     // to BinBuff to set a buffer from memory. After this is complete, a
@@ -269,12 +269,16 @@ void Ch10Packet::ParseBody()
             {
                 pkt_type_ = Ch10PacketType::COMPUTER_GENERATED_DATA_F1;
                 tmats_->Parse(data_ptr_);
+                if((status_ = TmatsStatus(abs_pos, found_tmats, true))!= Ch10Status::OK)
+                    return status_;
             }
             break;
         case static_cast<uint8_t>(Ch10PacketType::TIME_DATA_F1):
             if (ctx_->IsPacketTypeEnabled(Ch10PacketType::TIME_DATA_F1))
             {
                 pkt_type_ = Ch10PacketType::TIME_DATA_F1;
+                if((status_ = TmatsStatus(abs_pos, found_tmats, false))!= Ch10Status::OK)
+                    return status_;
                 tdp_component_->Parse(data_ptr_);
             }
             break;
@@ -282,6 +286,8 @@ void Ch10Packet::ParseBody()
             if (ctx_->IsPacketTypeEnabled(Ch10PacketType::MILSTD1553_F1))
             {
                 pkt_type_ = Ch10PacketType::MILSTD1553_F1;
+                if((status_ = TmatsStatus(abs_pos, found_tmats, false)) != Ch10Status::OK)
+                    return status_;
                 milstd1553f1_component_->Parse(data_ptr_);
             }
             break;
@@ -289,6 +295,8 @@ void Ch10Packet::ParseBody()
             if (ctx_->IsPacketTypeEnabled(Ch10PacketType::VIDEO_DATA_F0))
             {
                 pkt_type_ = Ch10PacketType::VIDEO_DATA_F0;
+                if((status_ = TmatsStatus(abs_pos, found_tmats, false)) != Ch10Status::OK)
+                    return status_;
                 videof0_component_->Parse(data_ptr_);
 
                 // Get the earliest subpacket absolute time that was parsed
@@ -306,6 +314,8 @@ void Ch10Packet::ParseBody()
             if (ctx_->IsPacketTypeEnabled(Ch10PacketType::ETHERNET_DATA_F0))
             {
                 pkt_type_ = Ch10PacketType::ETHERNET_DATA_F0;
+                if((status_ = TmatsStatus(abs_pos, found_tmats, false))!= Ch10Status::OK)
+                    return status_;
                 ethernetf0_component_->Parse(data_ptr_);
             }
             break;
@@ -313,6 +323,8 @@ void Ch10Packet::ParseBody()
             if(ctx_->IsPacketTypeEnabled(Ch10PacketType::ARINC429_F0))
             {
                 pkt_type_ = Ch10PacketType::ARINC429_F0;
+                if((status_ = TmatsStatus(abs_pos, found_tmats, false)) != Ch10Status::OK)
+                    return status_;
                 arinc429f0_component_->Parse(data_ptr_);
             }
             break;
@@ -322,6 +334,8 @@ void Ch10Packet::ParseBody()
             // alert the user.
             Ch10PacketType pkt_type = static_cast<Ch10PacketType>(
                 header_->GetHeader()->data_type);
+            if((status_ = TmatsStatus(abs_pos, found_tmats, false)) != Ch10Status::OK)
+                return status_;
             if (ctx_->RegisterUnhandledPacketType(pkt_type))
             {
                 SPDLOG_WARN("({:02d}) No parser exists for {:s}", ctx_->thread_id,
@@ -329,4 +343,36 @@ void Ch10Packet::ParseBody()
             }
             break;
     }
+    return Ch10Status::OK;
+}
+
+Ch10Status Ch10Packet::TmatsStatus(const uint64_t& abs_pos, 
+    bool& found_tmats, bool curr_tmats)
+{
+    if(abs_pos > 0 && curr_tmats)
+    {
+        found_tmats = true;
+        return Ch10Status::TMATS_PKT_ERR;
+    }
+    else if(abs_pos == 0)
+    {
+        if(found_tmats)
+        {
+            if(curr_tmats)
+                return Ch10Status::OK;
+            else
+                return Ch10Status::TMATS_PKT;
+        }
+        else 
+        {
+            if(curr_tmats)
+            {
+                found_tmats = true;
+                return Ch10Status::OK;
+            }
+            else
+                return Ch10Status::TMATS_PKT_ERR;
+        }
+    }
+    return Ch10Status::OK;
 }

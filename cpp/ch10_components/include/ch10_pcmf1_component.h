@@ -25,9 +25,6 @@ class Ch10PCMF1Component : public Ch10PacketComponent
     ElemPtrVec pcmf1_ip_data_hdr16_elem_vec_;
     ElemPtrVec pcmf1_ip_data_hdr32_elem_vec_;
 
-    const PCMF1CSDWModeFmt* pcmf1_data_hdr_mode_ptr_;
-    const PCMF1CSDWLockstFmt* pcmf1_data_hdr_lockst_ptr_;
-    
     // Hold absolute time of current message in units of nanoseconds
     // since the epoch.
     uint64_t abs_time_;
