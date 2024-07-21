@@ -90,6 +90,19 @@ bool WorkerConfig::CheckNonAppendModeConfig()
             spdlog::get("pm_logger")->debug("ConfigureWorker: Last worker reached EOF OK");
             return true;
         }
+
+        // Alternately, if this is the first worker and the configured read
+        // size is greater than the total ch10 file size then there is no
+        // expectation that the actual read size is equal to requested read
+        // size.
+        if((this->worker_index_ == 0) && 
+            (this->actual_read_bytes_ < this->total_bytes_))
+        {
+            spdlog::get("pm_logger")->debug("ConfigureWorker: First worker reached EOF OK");
+            spdlog::get("pm_logger")->error("ConfigureWorker: TEST ME!!!");
+            return true;
+        }
+
         return false;
     }
     return true;
