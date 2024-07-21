@@ -269,7 +269,7 @@ Ch10Status Ch10Packet::ParseBody(const uint64_t& abs_pos, bool& found_tmats)
             {
                 pkt_type_ = Ch10PacketType::COMPUTER_GENERATED_DATA_F1;
                 tmats_->Parse(data_ptr_);
-                if((status_ = TmatsStatus(abs_pos, found_tmats, true))!= Ch10Status::OK)
+                if((status_ = TmatsStatus(abs_pos, found_tmats, true)) != Ch10Status::OK)
                     return status_;
             }
             break;

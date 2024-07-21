@@ -175,7 +175,7 @@ int ParseManager::StartThreads(bool append_mode,
         worker_ind++;
 
     spdlog::get("pm_logger")->debug("StartThreads: Starting worker threads");
-    for (uint16_t worker_ind = 0; worker_ind < effective_worker_count; worker_ind++)
+    for (worker_ind; worker_ind < effective_worker_count; worker_ind++)
     {
         thread_started = false;
 
@@ -185,6 +185,24 @@ int ParseManager::StartThreads(bool append_mode,
                 worker_offset_wait_ms, active_workers_vec, worker_ind, total_read_pos, 
                 active_thread_count, user_config.parse_thread_count_, thread_started)) != 0)
                 return retcode_;
+
+            // The first worker reads TMATs only. In this case the next
+            // worker should start immediately where the first worker
+            // ends. Note that worker_index should never be 0 for append
+            // mode since the first worker stops on a packet boundary
+            // immediately after reading TMATs. Thus append mode is
+            // only valid for the second worker and the following workers.
+            if(worker_ind == 0)
+            {
+                spdlog::get("pm_logger")->debug("ParseManager::ActivateInitialThread(): "
+                    "First worker: Waiting for first worker to stop "
+                    "in order to collect TMATs data");
+                if (!StopThreads(work_units, active_workers_vec, user_config.worker_shift_wait_ms_, pmf))
+                    return EX_SOFTWARE;
+                active_thread_count = 0;
+                total_read_pos = work_units.at(worker_ind)->conf_.last_position_;
+                // parse tmats here
+            }
             
             if((retcode_ = ActivateAvailableThread(pmf, append_mode, work_units, worker_shift_wait_ms,
                 active_workers_vec, worker_ind, total_read_pos, thread_started)) != 0)
@@ -210,17 +228,7 @@ int ParseManager::ActivateInitialThread(ParseManagerFunctions* pmf, bool append_
             return EX_SOFTWARE;
 
         active_thread_count += 1;
-
-        // The first worker reads TMATs only. In this case the next
-        // worker should start immediately where the first worker
-        // ends. Note that worker_index should never be 0 for append
-        // mode since the first worker stops on a packet boundary
-        // immediately after reading TMATs. Thus append mode is
-        // only valid for the second worker and the following workers.
-        if(worker_index == 0)
-            read_pos = work_unit->conf_.last_position_;
-        else
-            read_pos += work_unit->GetReadBytes();
+        read_pos += work_unit->GetReadBytes();
         thread_started = true;
 
         if (!append_mode)
@@ -355,8 +363,10 @@ void ParseManagerFunctions::IngestUserConfig(const ParserConfigParams& user_conf
 
     // Calculate the number of workers necessary to parse the entire file
     // based on the chunk of binary that each worker will parse.
+    // Add one additional worker for the initial worker which only parses
+    // TMATS packets then returns. 
     worker_count = static_cast<int>(ceil(static_cast<double>(ch10_file_size) 
-        / static_cast<double>(chunk_bytes)));
+        / static_cast<double>(chunk_bytes))) + 1;
 
     spdlog::get("pm_logger")->info("AllocateResources: chunk size {:d} bytes", 
         chunk_bytes);
