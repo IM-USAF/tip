@@ -129,7 +129,7 @@ int ParseWorker::ParseBufferData(Ch10Context* ctx, BinBuff* bb)
     bool found_tmats = false;
     while (continue_parsing)
     {
-        status = packet.ParseHeader();
+        status = packet.ParseHeader(abs_start_position_, found_tmats);
         if (status == Ch10Status::BAD_SYNC || status == Ch10Status::PKT_TYPE_NO)
         {
             continue;
@@ -139,19 +139,17 @@ int ParseWorker::ParseBufferData(Ch10Context* ctx, BinBuff* bb)
             continue_parsing = false;
             continue;
         }
-
-        // Parse body if the header is parsed and validated.
-        status = packet.ParseBody(abs_start_position_, found_tmats);
-        if(status == Ch10Status::TMATS_PKT)
+        else if(status == Ch10Status::TMATS_PKT)
         {
-            SPDLOG_DEBUG("ParseWorker: TMATS packet(s) found: returning");
             continue_parsing = false;
         }
         else if(status == Ch10Status::TMATS_PKT_ERR)
         {
-            SPDLOG_ERROR("TMATS packer error: MAKE THIS A BETTER LOG ITEM LATER!!");
             return 1;
         }
+
+        // Parse body if the header is parsed and validated.
+        status = packet.ParseBody();
         // The very first worker will parse the ch10 initial matter, 
         // which includes TMATS. It should stop immediately after all
         // TMATS packets are parsed and return. If the initial absolute

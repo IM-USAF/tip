@@ -187,7 +187,7 @@ TEST_F(Ch10PacketTest, ManageSecondaryHeaderParseStatusInvalidBufferLimited)
 TEST_F(Ch10PacketTest, ParseHeaderBytesAvailableFail)
 {
     EXPECT_CALL(mock_bb_, BytesAvailable(mock_hdr_.std_hdr_size_)).WillOnce(Return(false));
-    ASSERT_EQ(Ch10Status::BUFFER_LIMITED, p_.ParseHeader());
+    ASSERT_EQ(Ch10Status::BUFFER_LIMITED, p_.ParseHeader(abs_pos_, found_tmats_));
 }
 
 TEST_F(Ch10PacketTest, ParseHeaderManageHeaderParseStatusFail)
@@ -206,7 +206,7 @@ TEST_F(Ch10PacketTest, ParseHeaderManageHeaderParseStatusFail)
     EXPECT_CALL(mock_hdr_, GetHeader()).InSequence(seq).WillOnce(Return(&hdr_fmt));
     EXPECT_CALL(mock_bb_, AdvanceReadPos(1)).InSequence(seq).WillOnce(Return(1));
 
-    ASSERT_EQ(Ch10Status::BUFFER_LIMITED, p_.ParseHeader());
+    ASSERT_EQ(Ch10Status::BUFFER_LIMITED, p_.ParseHeader(abs_pos_, found_tmats_));
 }
 
 TEST_F(Ch10PacketTest, ParseHeaderAllPacketBytesAvailableFail)
@@ -226,7 +226,7 @@ TEST_F(Ch10PacketTest, ParseHeaderAllPacketBytesAvailableFail)
     EXPECT_CALL(mock_bb_, BytesAvailable(hdr_fmt.pkt_size)).InSequence(seq)
         .WillOnce(Return(false));
 
-    ASSERT_EQ(Ch10Status::BUFFER_LIMITED, p_.ParseHeader());
+    ASSERT_EQ(Ch10Status::BUFFER_LIMITED, p_.ParseHeader(abs_pos_, found_tmats_));
 }
 
 TEST_F(Ch10PacketTest, ParseHeaderAdvanceBufferFail)
@@ -247,7 +247,7 @@ TEST_F(Ch10PacketTest, ParseHeaderAdvanceBufferFail)
         .WillOnce(Return(true));
     EXPECT_CALL(mock_bb_, AdvanceReadPos(hdr_fmt.pkt_size)).InSequence(seq).WillOnce(Return(1));
 
-    ASSERT_EQ(Ch10Status::BUFFER_LIMITED, p_.ParseHeader());
+    ASSERT_EQ(Ch10Status::BUFFER_LIMITED, p_.ParseHeader(abs_pos_, found_tmats_));
 }
 
 TEST_F(Ch10PacketTest, ParseHeaderUpdateContextFail)
@@ -275,7 +275,7 @@ TEST_F(Ch10PacketTest, ParseHeaderUpdateContextFail)
     EXPECT_CALL(mock_ctx_, UpdateContext(_, &hdr_fmt, _)).
         InSequence(seq).WillOnce(Return(Ch10Status::NONE)); // Not OK
 
-    ASSERT_EQ(Ch10Status::PKT_TYPE_NO, p_.ParseHeader());
+    ASSERT_EQ(Ch10Status::PKT_TYPE_NO, p_.ParseHeader(abs_pos_, found_tmats_));
 }
 
 TEST_F(Ch10PacketTest, ParseHeaderVerifyDataChecksumFail)
@@ -305,7 +305,7 @@ TEST_F(Ch10PacketTest, ParseHeaderVerifyDataChecksumFail)
     EXPECT_CALL(mock_hdr_, VerifyDataChecksum(_, hdr_fmt.checksum_existence, hdr_fmt.pkt_size,
         hdr_fmt.secondary_hdr)).InSequence(seq).WillOnce(Return(Ch10Status::CHECKSUM_FALSE));
 
-    ASSERT_EQ(Ch10Status::PKT_TYPE_NO, p_.ParseHeader());
+    ASSERT_EQ(Ch10Status::PKT_TYPE_NO, p_.ParseHeader(abs_pos_, found_tmats_));
 }
 
 TEST_F(Ch10PacketTest, ParseHeaderSecondaryHeaderFail)
@@ -339,7 +339,7 @@ TEST_F(Ch10PacketTest, ParseHeaderSecondaryHeaderFail)
     EXPECT_CALL(mock_bb_, AdvanceReadPos(hdr_fmt.pkt_size)).InSequence(seq).WillOnce(Return(0));
     EXPECT_CALL(mock_ctx_, AdvanceAbsPos(hdr_fmt.pkt_size)).InSequence(seq).WillOnce(Return());
 
-    ASSERT_EQ(Ch10Status::PKT_TYPE_NO, p_.ParseHeader());
+    ASSERT_EQ(Ch10Status::PKT_TYPE_NO, p_.ParseHeader(abs_pos_, found_tmats_));
 }
 
 TEST_F(Ch10PacketTest, ParseHeaderNoUpdateSecondaryHeaderTime)
@@ -375,7 +375,7 @@ TEST_F(Ch10PacketTest, ParseHeaderNoUpdateSecondaryHeaderTime)
     EXPECT_CALL(mock_ctx_, ContinueWithPacketType(hdr_fmt.data_type)).InSequence(seq)
         .WillOnce(Return(Ch10Status::PKT_TYPE_YES));
 
-    ASSERT_EQ(Ch10Status::PKT_TYPE_YES, p_.ParseHeader());
+    ASSERT_EQ(Ch10Status::PKT_TYPE_YES, p_.ParseHeader(abs_pos_, found_tmats_));
 }
 
 TEST_F(Ch10PacketTest, ParseHeaderUpdateSecondaryHeaderTime)
@@ -413,7 +413,7 @@ TEST_F(Ch10PacketTest, ParseHeaderUpdateSecondaryHeaderTime)
     EXPECT_CALL(mock_ctx_, ContinueWithPacketType(hdr_fmt.data_type)).InSequence(seq)
         .WillOnce(Return(Ch10Status::PKT_TYPE_YES));
 
-    ASSERT_EQ(Ch10Status::PKT_TYPE_YES, p_.ParseHeader());
+    ASSERT_EQ(Ch10Status::PKT_TYPE_YES, p_.ParseHeader(abs_pos_, found_tmats_));
 }
 
 TEST_F(Ch10PacketTest, ParseBodyComputerGeneratedDataF1)
@@ -426,7 +426,7 @@ TEST_F(Ch10PacketTest, ParseBodyComputerGeneratedDataF1)
 
     abs_pos_ = 0;
     found_tmats_ = false;
-    p_.ParseBody(abs_pos_, found_tmats_);
+    p_.ParseBody();
     EXPECT_EQ(Ch10PacketType::NONE, p_.current_pkt_type);
 
     EXPECT_CALL(mock_hdr_, GetHeader()).WillOnce(Return(&hdr_fmt));
@@ -434,7 +434,7 @@ TEST_F(Ch10PacketTest, ParseBodyComputerGeneratedDataF1)
         .WillOnce(Return(true));
     EXPECT_CALL(mock_tmats_, Parse(_)).WillOnce(Return(Ch10Status::OK));
 
-    p_.ParseBody(abs_pos_, found_tmats_);
+    p_.ParseBody();
     EXPECT_EQ(Ch10PacketType::COMPUTER_GENERATED_DATA_F1, p_.current_pkt_type);
 }
 
@@ -448,7 +448,7 @@ TEST_F(Ch10PacketTest, ParseBodyTimeDataF1)
 
     abs_pos_ = 38382880;
     found_tmats_ = false;
-    p_.ParseBody(abs_pos_, found_tmats_);
+    p_.ParseBody();
     EXPECT_EQ(Ch10PacketType::NONE, p_.current_pkt_type);
 
     EXPECT_CALL(mock_hdr_, GetHeader()).WillOnce(Return(&hdr_fmt));
@@ -456,7 +456,7 @@ TEST_F(Ch10PacketTest, ParseBodyTimeDataF1)
         .WillOnce(Return(true));
     EXPECT_CALL(mock_tdp_, Parse(_)).WillOnce(Return(Ch10Status::OK));
 
-    p_.ParseBody(abs_pos_, found_tmats_);
+    p_.ParseBody();
     EXPECT_EQ(Ch10PacketType::TIME_DATA_F1, p_.current_pkt_type);
 }
 
@@ -470,7 +470,7 @@ TEST_F(Ch10PacketTest, ParseBodyMilStd1553F1)
 
     abs_pos_ = 38382880;
     found_tmats_ = false;
-    p_.ParseBody(abs_pos_, found_tmats_);
+    p_.ParseBody();
     EXPECT_EQ(Ch10PacketType::NONE, p_.current_pkt_type);
 
     EXPECT_CALL(mock_hdr_, GetHeader()).WillOnce(Return(&hdr_fmt));
@@ -478,7 +478,7 @@ TEST_F(Ch10PacketTest, ParseBodyMilStd1553F1)
         .WillOnce(Return(true));
     EXPECT_CALL(mock_milstd1553_, Parse(_)).WillOnce(Return(Ch10Status::OK));
 
-    p_.ParseBody(abs_pos_, found_tmats_);
+    p_.ParseBody();
     EXPECT_EQ(Ch10PacketType::MILSTD1553_F1, p_.current_pkt_type);
 }
 
@@ -492,7 +492,7 @@ TEST_F(Ch10PacketTest, ParseBodyVideoF0)
 
     abs_pos_ = 38382880;
     found_tmats_ = false;
-    p_.ParseBody(abs_pos_, found_tmats_);
+    p_.ParseBody();
     EXPECT_EQ(Ch10PacketType::NONE, p_.current_pkt_type);
 
     EXPECT_CALL(mock_hdr_, GetHeader()).WillOnce(Return(&hdr_fmt));
@@ -501,7 +501,7 @@ TEST_F(Ch10PacketTest, ParseBodyVideoF0)
     EXPECT_CALL(mock_vid_, Parse(_)).WillOnce(Return(Ch10Status::OK));
     EXPECT_CALL(mock_ctx_, RecordMinVideoTimeStamp(_)).WillOnce(Return());
 
-    p_.ParseBody(abs_pos_, found_tmats_);
+    p_.ParseBody();
     EXPECT_EQ(Ch10PacketType::VIDEO_DATA_F0, p_.current_pkt_type);
 }
 
@@ -515,7 +515,7 @@ TEST_F(Ch10PacketTest, ParseBodyEthernetF0)
 
     abs_pos_ = 38382880;
     found_tmats_ = false;
-    p_.ParseBody(abs_pos_, found_tmats_);
+    p_.ParseBody();
     EXPECT_EQ(Ch10PacketType::NONE, p_.current_pkt_type);
 
     EXPECT_CALL(mock_hdr_, GetHeader()).WillOnce(Return(&hdr_fmt));
@@ -523,7 +523,7 @@ TEST_F(Ch10PacketTest, ParseBodyEthernetF0)
         .WillOnce(Return(true));
     EXPECT_CALL(mock_eth_, Parse(_)).WillOnce(Return(Ch10Status::OK));
 
-    p_.ParseBody(abs_pos_, found_tmats_);
+    p_.ParseBody();
     EXPECT_EQ(Ch10PacketType::ETHERNET_DATA_F0, p_.current_pkt_type);
 }
 
@@ -537,7 +537,7 @@ TEST_F(Ch10PacketTest, ParseBody429F0)
 
     abs_pos_ = 38382880;
     found_tmats_ = false;
-    p_.ParseBody(abs_pos_, found_tmats_);
+    p_.ParseBody();
     EXPECT_EQ(Ch10PacketType::NONE, p_.current_pkt_type);
 
     EXPECT_CALL(mock_hdr_, GetHeader()).WillOnce(Return(&hdr_fmt));
@@ -545,7 +545,7 @@ TEST_F(Ch10PacketTest, ParseBody429F0)
         .WillOnce(Return(true));
     EXPECT_CALL(mock_arinc429_, Parse(_)).WillOnce(Return(Ch10Status::OK));
 
-    p_.ParseBody(abs_pos_, found_tmats_);
+    p_.ParseBody();
     EXPECT_EQ(Ch10PacketType::ARINC429_F0, p_.current_pkt_type);
 }
 
@@ -559,14 +559,14 @@ TEST_F(Ch10PacketTest, ParseBodyDefault)
 
     abs_pos_ = 38382880;
     found_tmats_ = false;
-    p_.ParseBody(abs_pos_, found_tmats_);
+    p_.ParseBody();
     EXPECT_EQ(Ch10PacketType::NONE, p_.current_pkt_type);
 
     EXPECT_CALL(mock_hdr_, GetHeader()).WillRepeatedly(Return(&hdr_fmt));
     EXPECT_CALL(mock_ctx_, RegisterUnhandledPacketType(Ch10PacketType::NONE))
         .WillOnce(Return(true));
 
-    p_.ParseBody(abs_pos_, found_tmats_);
+    p_.ParseBody();
     EXPECT_EQ(Ch10PacketType::NONE, p_.current_pkt_type);
 }
 
