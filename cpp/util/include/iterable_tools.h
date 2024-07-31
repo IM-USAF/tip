@@ -1179,7 +1179,7 @@ std::string IterableTools::GetPrintableMapElements_KeyToBool(const std::map<Key,
     std::stringstream ss;
     for (typename std::map<Key, bool>::const_iterator it = input_map.begin(); it != input_map.end(); it++)
     {
-        ss << " " << it->first << ":\t\t";
+        ss << " " << it->first << ":\t";
         ss << std::boolalpha << it->second;
         ss << "\n";
     }
