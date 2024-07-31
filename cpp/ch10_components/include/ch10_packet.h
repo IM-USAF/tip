@@ -57,6 +57,9 @@ class Ch10Packet
     // Ch10 time calculation and manipulation
     Ch10Time* const ch10_time_;
 
+    // TMATs int value
+    static const uint32_t tmats_data_type_ = static_cast<uint32_t>(Ch10PacketType::COMPUTER_GENERATED_DATA_F1);
+
    public:
 
 
@@ -106,8 +109,17 @@ class Ch10Packet
     Parse the ch10 header at the current location of the buffer.
 
     Advances the buffer to the next potentially viable position.
+
+ 	Args:
+		abs_pos 	--> File read starting position in bytes of
+						the current worker
+		found_tmats	--> Boolean indicates if at least one tmats 
+						packet has been parsed. VAlue is also set
+						by this function.
+    Return:
+        Ch10Status
     */
-    Ch10Status ParseHeader();
+    Ch10Status ParseHeader(const uint64_t& abs_pos, bool& found_tmats);
 
 
 
@@ -184,16 +196,10 @@ class Ch10Packet
     The primary purpose of this function is to call the correct parser
     for the packet type indicated in the header.
 
- 	Args:
-		abs_pos 	--> File read starting position in bytes of
-						the current worker
-		found_tmats	--> Boolean indicates if at least one tmats 
-						packet has been parsed. VAlue is also set
-						by this function.
     Return:
         Ch10Status
     */
-    Ch10Status ParseBody(const uint64_t& abs_pos, bool& found_tmats);
+    Ch10Status ParseBody();
 
 
 	/*
