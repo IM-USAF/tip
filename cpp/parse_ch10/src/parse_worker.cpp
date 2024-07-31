@@ -127,6 +127,9 @@ int ParseWorker::ParseBufferData(Ch10Context* ctx, BinBuff* bb)
     bool continue_parsing = true;
     Ch10Status status;
     bool found_tmats = false;
+
+    // debug
+    int count = 0;
     while (continue_parsing)
     {
         status = packet.ParseHeader(abs_start_position_, found_tmats);
@@ -136,6 +139,8 @@ int ParseWorker::ParseBufferData(Ch10Context* ctx, BinBuff* bb)
         }
         else if (status == Ch10Status::PKT_TYPE_EXIT || status == Ch10Status::BUFFER_LIMITED)
         {
+            if (ctx->thread_id > 1)
+                SPDLOG_DEBUG("({:d}) PARSING ITERATION {:d} - pkt_type_exit or buffer_limited", ctx->thread_id, count);
             continue_parsing = false;
             continue;
         }
@@ -150,24 +155,7 @@ int ParseWorker::ParseBufferData(Ch10Context* ctx, BinBuff* bb)
 
         // Parse body if the header is parsed and validated.
         status = packet.ParseBody();
-        // The very first worker will parse the ch10 initial matter, 
-        // which includes TMATS. It should stop immediately after all
-        // TMATS packets are parsed and return. If the initial absolute
-        // position of the data of which the worker ingests is not zero, 
-        // then it must not be the first worker and the presence of the 
-        // TMATS packet is an error. 
-        // if(abs_start_position_ == 0)
-        // {
-
-        // }
-        // if(packet.current_pkt_type == Ch10PacketType::COMPUTER_GENERATED_DATA_F1)
-        // {
-        //     found_tmats = true;
-        //     if(abs_start_position_ != 0)
-        //         SPDLOG_ERROR("TMATS packet found with worker starting at abs position {:d}", 
-        //             abs_start_position_);
-            
-        // }
+        count++;
     }
     return 0;
 }

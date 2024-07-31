@@ -182,30 +182,36 @@ Ch10Status Ch10Packet::ParseHeader(const uint64_t& abs_pos, bool& found_tmats)
     // This pointer will be incremented by Parse(...).
     data_ptr_ = bb_->Data();
 
-    // Parse header and determine validity of TMATs presence
+    // Parse header and check authenticity
     status_ = header_->Parse(data_ptr_);
     const Ch10PacketHeaderFmt* const hdr = header_->GetHeader();
-    if (hdr->data_type == tmats_data_type_)
-    {
-        if((status_ = TmatsStatus(abs_pos, found_tmats, true)) != Ch10Status::OK)
-            return status_;
-    }
-    else
-    {
-        if((status_ = TmatsStatus(abs_pos, found_tmats, false)) != Ch10Status::OK)
-            return status_;
-    }
     temp_pkt_size_ = static_cast<uint64_t>(hdr->pkt_size);
     status_ = ManageHeaderParseStatus(status_, temp_pkt_size_);
     if (status_ != Ch10Status::OK)
         return status_;
+
+    // Determine validity of TMATs presence
+    Ch10Status tmats_status_;
+    if (hdr->data_type == tmats_data_type_)
+    {
+        if((tmats_status_ = TmatsStatus(abs_pos, found_tmats, true)) != Ch10Status::OK)
+            return tmats_status_;
+    }
+    else
+    {
+        if((tmats_status_ = TmatsStatus(abs_pos, found_tmats, false)) != Ch10Status::OK)
+            return tmats_status_;
+    }
 
     // Check if all of the bytes in current packet are available
     // in the buffer. There is no need to continue parsing the secondary
     // header or the packet body if all of the data are not present in
     // the buffer.
     if (!bb_->BytesAvailable(temp_pkt_size_))
+    {
+        SPDLOG_ERROR("returning at 2nd BytesAvailable ({:d})", temp_pkt_size_);
         return Ch10Status::BUFFER_LIMITED;
+    }
 
     // Whether the header (possibly secondary header) have been parsed correctly,
     // move the absolute position and buffer position to the beginning of the next
@@ -374,7 +380,7 @@ Ch10Status Ch10Packet::TmatsStatus(const uint64_t& abs_pos,
                 return Ch10Status::OK;
             else
             {
-                SPDLOG_DEBUG("Ch10Packet: TMATS packet(s) found");
+                SPDLOG_INFO("Ch10Packet: TMATS packet(s) found");
                 return Ch10Status::TMATS_PKT;
             }
         }
