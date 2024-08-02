@@ -128,8 +128,6 @@ int ParseWorker::ParseBufferData(Ch10Context* ctx, BinBuff* bb)
     Ch10Status status;
     bool found_tmats = false;
 
-    // debug
-    int count = 0;
     while (continue_parsing)
     {
         status = packet.ParseHeader(abs_start_position_, found_tmats);
@@ -139,14 +137,13 @@ int ParseWorker::ParseBufferData(Ch10Context* ctx, BinBuff* bb)
         }
         else if (status == Ch10Status::PKT_TYPE_EXIT || status == Ch10Status::BUFFER_LIMITED)
         {
-            if (ctx->thread_id > 1)
-                SPDLOG_DEBUG("({:d}) PARSING ITERATION {:d} - pkt_type_exit or buffer_limited", ctx->thread_id, count);
             continue_parsing = false;
             continue;
         }
         else if(status == Ch10Status::TMATS_PKT)
         {
             continue_parsing = false;
+            continue;
         }
         else if(status == Ch10Status::TMATS_PKT_ERR)
         {
@@ -155,7 +152,6 @@ int ParseWorker::ParseBufferData(Ch10Context* ctx, BinBuff* bb)
 
         // Parse body if the header is parsed and validated.
         status = packet.ParseBody();
-        count++;
     }
     return 0;
 }
