@@ -208,10 +208,7 @@ Ch10Status Ch10Packet::ParseHeader(const uint64_t& abs_pos, bool& found_tmats)
     // header or the packet body if all of the data are not present in
     // the buffer.
     if (!bb_->BytesAvailable(temp_pkt_size_))
-    {
-        SPDLOG_ERROR("returning at 2nd BytesAvailable ({:d})", temp_pkt_size_);
         return Ch10Status::BUFFER_LIMITED;
-    }
 
     // Whether the header (possibly secondary header) have been parsed correctly,
     // move the absolute position and buffer position to the beginning of the next
@@ -285,16 +282,12 @@ Ch10Status Ch10Packet::ParseBody()
             {
                 pkt_type_ = Ch10PacketType::COMPUTER_GENERATED_DATA_F1;
                 tmats_->Parse(data_ptr_);
-                // if((status_ = TmatsStatus(abs_pos, found_tmats, true)) != Ch10Status::OK)
-                //     return status_;
             }
             break;
         case static_cast<uint8_t>(Ch10PacketType::TIME_DATA_F1):
             if (ctx_->IsPacketTypeEnabled(Ch10PacketType::TIME_DATA_F1))
             {
                 pkt_type_ = Ch10PacketType::TIME_DATA_F1;
-                // if((status_ = TmatsStatus(abs_pos, found_tmats, false))!= Ch10Status::OK)
-                //     return status_;
                 tdp_component_->Parse(data_ptr_);
             }
             break;
@@ -302,8 +295,6 @@ Ch10Status Ch10Packet::ParseBody()
             if (ctx_->IsPacketTypeEnabled(Ch10PacketType::MILSTD1553_F1))
             {
                 pkt_type_ = Ch10PacketType::MILSTD1553_F1;
-                // if((status_ = TmatsStatus(abs_pos, found_tmats, false)) != Ch10Status::OK)
-                //     return status_;
                 milstd1553f1_component_->Parse(data_ptr_);
             }
             break;
@@ -311,8 +302,6 @@ Ch10Status Ch10Packet::ParseBody()
             if (ctx_->IsPacketTypeEnabled(Ch10PacketType::VIDEO_DATA_F0))
             {
                 pkt_type_ = Ch10PacketType::VIDEO_DATA_F0;
-                // if((status_ = TmatsStatus(abs_pos, found_tmats, false)) != Ch10Status::OK)
-                //     return status_;
                 videof0_component_->Parse(data_ptr_);
 
                 // Get the earliest subpacket absolute time that was parsed
@@ -330,8 +319,6 @@ Ch10Status Ch10Packet::ParseBody()
             if (ctx_->IsPacketTypeEnabled(Ch10PacketType::ETHERNET_DATA_F0))
             {
                 pkt_type_ = Ch10PacketType::ETHERNET_DATA_F0;
-                // if((status_ = TmatsStatus(abs_pos, found_tmats, false))!= Ch10Status::OK)
-                //     return status_;
                 ethernetf0_component_->Parse(data_ptr_);
             }
             break;
@@ -339,8 +326,6 @@ Ch10Status Ch10Packet::ParseBody()
             if(ctx_->IsPacketTypeEnabled(Ch10PacketType::ARINC429_F0))
             {
                 pkt_type_ = Ch10PacketType::ARINC429_F0;
-                // if((status_ = TmatsStatus(abs_pos, found_tmats, false)) != Ch10Status::OK)
-                //     return status_;
                 arinc429f0_component_->Parse(data_ptr_);
             }
             break;
@@ -350,8 +335,6 @@ Ch10Status Ch10Packet::ParseBody()
             // alert the user.
             Ch10PacketType pkt_type = static_cast<Ch10PacketType>(
                 header_->GetHeader()->data_type);
-            // if((status_ = TmatsStatus(abs_pos, found_tmats, false)) != Ch10Status::OK)
-            //     return status_;
             if (ctx_->RegisterUnhandledPacketType(pkt_type))
             {
                 SPDLOG_WARN("({:02d}) No parser exists for {:s}", ctx_->thread_id,

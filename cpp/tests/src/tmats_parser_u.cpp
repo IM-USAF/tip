@@ -65,6 +65,10 @@ const std::string TMATS =
     "\n"
     R"(R-1\TSRC-1:E;)"
     "\n"
+    R"(P-1\F1:16;)"
+    "\n"
+    R"(P-4\F1:20;)"
+    "\n"
     R"(V-1\HDS\SYS:sY1a-;)"
     "\n"
     R"(V-1\HDS\SYS:solRmRa5b5e3hNiBk1pAr0u-n+sBy-z6;)"
@@ -168,6 +172,7 @@ class TMATSParserTest : public ::testing::Test
     std::vector<subattr_data_tuple> values_;
     subattr_index_map kmap_;
     subattr_index_map vmap_;
+    subattr_map submap_;
     std::string kdata_;
     std::string vdata_;
     subattr_index_map::const_iterator index_map_it_;
@@ -216,6 +221,31 @@ TEST(CodeNameTest, RegexCorrectCompound)
     CodeName c = CodeName(R"(R-x\ASN-n-m)", false);
 
     EXPECT_EQ("R-([0-9]+)\\\\ASN-([0-9]+)-([0-9]+)", c.regex_string);
+}
+
+TEST(CodeNameTest, RegexCorrectSimpleValue)
+{
+    CodeName c = CodeName(R"(P-d\F1)", false);
+
+    EXPECT_EQ("P-([0-9]+)\\\\F1", c.regex_string);
+}
+
+TEST_F(TMATSParserTest, ParseLinesUnilateralNoRegex)
+{
+    ASSERT_FALSE(parser_.ParseLines("G\\106", submap_));
+}
+
+TEST_F(TMATSParserTest, ParseLinesUnilateral)
+{
+    ASSERT_TRUE(parser_.ParseLines("P-d\\F1", submap_));
+
+    // R"(P-1\F1:16;)"
+    // R"(P-4\F1:20;)"
+    ASSERT_EQ(2, submap_.size());
+    ASSERT_TRUE(submap_.count(1) == 1);
+    ASSERT_TRUE(submap_.count(4) == 1);
+    ASSERT_EQ("16", submap_.at(1));
+    ASSERT_EQ("20", submap_.at(4));
 }
 
 TEST_F(TMATSParserTest, ParseLinesSingleVar)

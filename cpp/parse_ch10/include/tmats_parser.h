@@ -11,6 +11,7 @@
 #include <vector>
 #include "iterable_tools.h"
 
+using subattr_map = std::map<int, std::string>;
 using subattr_index_map = std::map<std::string, int>;
 using subattr_data_tuple = std::tuple<subattr_index_map, std::string>;
 
@@ -82,6 +83,28 @@ class TMATSParser
         std::vector<subattr_data_tuple>& keys,
         std::vector<subattr_data_tuple>& values);
         
+
+    /*
+    Create CodeName instances for key, parse all TMATS data record
+    lines and fill vectors of subattr_map for key.
+
+    Args:
+        key_attr    --> String of TMATs generic data code to
+                        be matched as the key
+        vals        --> Populated subattr_map of index to 
+                        mapped value for the given key_attr
+
+        Ex:
+        P-1\F1:16;
+        P-2\F1:20;
+
+        ParseLines("P-d\\F1", vals);
+        vals --> {{"1", "16"}, {"2", "20"}}
+
+    Return:
+        False if regex string is empty; true otherwise.
+    */
+    bool ParseLines(std::string key_attr, subattr_map& vals);
 
     
     /*

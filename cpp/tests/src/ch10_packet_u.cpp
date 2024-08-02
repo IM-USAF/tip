@@ -44,7 +44,8 @@ class Ch10PacketTest : public ::testing::Test
     Ch10PacketTest() : status_(Ch10Status::NONE), mock_bb_(), mock_ctx_(), mock_ch10_time_(),
         p_(&mock_bb_, &mock_ctx_, &mock_ch10_time_),
         mock_tmats_(&mock_ctx_), mock_tdp_(&mock_ctx_), mock_milstd1553_(&mock_ctx_), mock_vid_(&mock_ctx_),
-        mock_eth_(&mock_ctx_), mock_arinc429_(&mock_ctx_), mock_hdr_(&mock_ctx_)
+        mock_eth_(&mock_ctx_), mock_arinc429_(&mock_ctx_), mock_hdr_(&mock_ctx_),
+        abs_pos_(58482882), found_tmats_(false)
     {}
 
     virtual void SetUp()

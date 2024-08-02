@@ -196,7 +196,7 @@ int ParseManager::StartThreads(bool append_mode,
             {
                 spdlog::get("pm_logger")->debug("ParseManager::ActivateInitialThread(): "
                     "First worker: Waiting for first worker to stop "
-                    "in order to collect TMATs data");
+                    "to collect TMATs data");
                 if (!StopThreads(work_units, active_workers_vec, user_config.worker_shift_wait_ms_, pmf))
                     return EX_SOFTWARE;
                 active_thread_count = 0;

@@ -11,7 +11,8 @@ const std::map<Ch10PacketType, std::string> TMATSData::TMATS_channel_data_type_m
     {Ch10PacketType::MILSTD1553_F1, "1553IN"},
     {Ch10PacketType::ARINC429_F0, "429IN"},
     {Ch10PacketType::VIDEO_DATA_F0, "VIDIN"},
-    {Ch10PacketType::ETHERNET_DATA_F0, "ETHIN"}
+    {Ch10PacketType::ETHERNET_DATA_F0, "ETHIN"},
+    {Ch10PacketType::PCM_F1, "PCMIN"}
 };
 
 bool TMATSData::Parse(const std::string& tmats_data, 

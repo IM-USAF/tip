@@ -28,6 +28,13 @@ CodeName::CodeName(std::string raw, bool show_debug)
         raw = match.suffix().str();
     }
 
+    // TEST
+    // If the suffix is not empty, then the suffix wasn't matched
+    // to the regex and therefore includes non-variable values
+    // which are simply part of the code. 
+    if (raw.length() > 0 && regex_string.length() > 0)
+        regex_string += raw;
+
     // Find and escape slashes before building the regex.
     std::string escaped;
     for (int i = 0; i < regex_string.length(); i++)
@@ -151,6 +158,48 @@ bool TMATSParser::MapAttrs(const std::string& key_attr, const std::string& value
         printf("TMATSParser::MapAttrs: failed to map \"%s\", \"%s\"\n",
             key_attr.c_str(), value_attr.c_str());
         return false;
+    }
+    return true;
+}
+
+
+bool TMATSParser::ParseLines(std::string key_attr, subattr_map& vals)
+{
+    // WARNING! This is unilateral, as in there is no second code with
+    // which matching indices (n,m) should be matched. It simply maps
+    // the index value with the right-side (of the colon) value. 
+    // Most importantly, the current state of this function doesn't 
+    // handle multiple variable inputs such as "R-m\TK4-n". Other
+    // ParseLines functions do handle multiple variables, but only
+    // in the bilateral matching case, in which a code is matched 
+    // to another code by the same values in the indices. 
+    CodeName key(key_attr, debug);
+    if(key.regex_string == "")
+        return false;
+
+    // Find matching keys and values;
+    std::smatch data_record_match;
+    std::string codename;
+    std::smatch code_match;
+    std::string s = raw.substr(0, raw.length());
+    std::regex r = (std::regex) "([0-9A-Za-z\\\\-]+):(.*);";
+    if (debug)
+        printf("\n\nTMATSParser::MapAttrs():\n");
+    for (std::sregex_iterator i = std::sregex_iterator(s.begin(), s.end(), r);
+         i != std::sregex_iterator(); i++)
+    {
+        data_record_match = *i;
+        codename = data_record_match.str(1);
+
+        if (debug)
+            printf("\nbasic match codename: %s\n", codename.c_str());
+
+        // Get the value of the key attribute and its subattrs (x, n, etc.).
+        if (regex_search(codename, code_match, key.re))
+        {
+            subattr_data_tuple temp_tuple(key.groups(code_match), data_record_match.str(2));
+            vals[std::get<0>(temp_tuple).begin()->second] = std::get<1>(temp_tuple);
+        }
     }
     return true;
 }
@@ -347,12 +396,6 @@ bool TMATSParser::MapKeyToValue(const std::vector<subattr_data_tuple>& keys,
             }
         }
 
-        // if(!match)
-        // {
-        //     printf("Failed to map key with data: %s\n", key_data.c_str());
-        //     mapped.clear();
-        //     return false;
-        // }
         if(match)
             mapped[key_data] = temp_vec;
     }

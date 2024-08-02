@@ -69,6 +69,16 @@ TEST_F(ParseManagerTest, IngestUserConfigValidateCalculatedParams)
 
     uint16_t expected_worker_count = int(ceil(float(file_size) /
                                               float(chunk_bytes)));
+    // Parse architecture was udpated as part of PCM_F1 parsing 
+    // development which ensures that the first worker parses
+    // TMATs only. Due to this change, and relatively small count
+    // of bytes that will be processed by the first worker, and
+    // the fact that the expected_worker_count calculation doesn't
+    // account for a very small chunk size first worker, another 
+    // worker must be added to ensure that the entire ch10 file is 
+    // processed/parsed.
+    expected_worker_count++;
+
     EXPECT_EQ(expected_worker_count, worker_count);
 }
 

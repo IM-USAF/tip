@@ -7,6 +7,7 @@ set(headers
     include/ch10_arinc429f0_msg_hdr_format.h
     include/ch10_packet_type.h
     include/ch10_pcmf1_msg_hdr_format.h
+    include/ch10_pcm_tmats_data.h
     include/sysexits.h
 )
 

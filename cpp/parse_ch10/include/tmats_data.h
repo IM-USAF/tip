@@ -8,6 +8,7 @@
 #include "spdlog/spdlog.h"
 #include "iterable_tools.h"
 #include "tmats_parser.h"
+#include "ch10_pcm_tmats_data.h"
 #include "ch10_packet_type.h"
 
 #define RETFAIL(x, y) if(!(x)) {SPDLOG_WARN("TMATSData::Parse: Failed to MapAttrs: " y); return false; }

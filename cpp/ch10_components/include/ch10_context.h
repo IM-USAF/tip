@@ -29,6 +29,7 @@
 #include "ch10_videof0_header_format.h"
 #include "ch10_arinc429f0_msg_hdr_format.h"
 #include "ch10_tdpf1_hdr_format.h"
+#include "ch10_pcm_tmats_data.h"
 #include "spdlog/spdlog.h"
 
 #include <fstream>
@@ -167,6 +168,8 @@ class Ch10Context
     // Hold TMATS matter for later recording
     std::string tmats_matter_;
 
+    Ch10PCMTMATSData pcm_tmats_data_;
+
    public:
     const uint16_t& thread_id;
     const uint64_t& absolute_position;
@@ -198,6 +201,7 @@ class Ch10Context
     const std::set<Ch10PacketType>& parsed_packet_types;
     const std::vector<TDF1CSDWFmt>& tdf1csdw_vec;
     const std::vector<uint64_t>& tdp_abs_time_vec;
+    const Ch10PCMTMATSData& pcm_tmats_data;
 
     Ch10Context(const uint64_t& abs_pos, uint16_t id = 0);
     Ch10Context();
@@ -231,6 +235,7 @@ class Ch10Context
 	*/
     bool IsConfigured();
 
+    void SetPCMTMATSData(const Ch10PCMTMATSData& pcm_data);
     void SetSearchingForTDP(bool should_search);
     virtual Ch10Status ContinueWithPacketType(uint8_t data_type);
 
