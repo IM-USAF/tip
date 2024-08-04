@@ -12,6 +12,8 @@
 #include "iterable_tools.h"
 
 using subattr_map = std::map<int, std::string>;
+// {index, {code name, value}}
+using unilateral_map = std::map<int, std::map<std::string, std::string>>;
 using subattr_index_map = std::map<std::string, int>;
 using subattr_data_tuple = std::tuple<subattr_index_map, std::string>;
 
@@ -63,6 +65,23 @@ class TMATSParser
     //////////////////////////////////////////////////////////////////////////
     //                  internal functions
     //////////////////////////////////////////////////////////////////////////
+
+
+    /*
+    Parse TMATs lines in search for unilateral keys and compile a 
+    master map which links the common index to a map of key attribute
+    name to string value.
+
+    Args:
+        key_attrs   --> Vector of string key attributes, i.e., 
+                        "P-d\DN", etc. 
+        uni_map     --> Unilateral map to be populated. 
+
+    If a key attribute can't be found in the TMATS data, then
+    populate the value mapped to the key with "null". 
+    */
+    void MapUnilateralAttrs(const std::vector<std::string>& key_attrs, 
+        unilateral_map& uni_map);
 
     /*
     Create CodeName instances for key and value, parse all TMATS data record

@@ -163,6 +163,13 @@ bool TMATSParser::MapAttrs(const std::string& key_attr, const std::string& value
 }
 
 
+void TMATSParser::MapUnilateralAttrs(const std::vector<std::string>& key_attrs, 
+    unilateral_map& uni_map)
+{
+
+}
+
+
 bool TMATSParser::ParseLines(std::string key_attr, subattr_map& vals)
 {
     // WARNING! This is unilateral, as in there is no second code with

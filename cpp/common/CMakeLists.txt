@@ -11,12 +11,14 @@ set(headers
     include/sysexits.h
 )
 
-add_library(common INTERFACE)
+add_library(common 
+    src/ch10_pcm_tmats_data.cpp
+)
 
-target_compile_features(common INTERFACE cxx_std_17)
+target_compile_features(common PUBLIC cxx_std_17)
 
 target_include_directories(common
-    INTERFACE include
+    PUBLIC include
 )
 
 set_target_properties(common
