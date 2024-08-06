@@ -163,10 +163,36 @@ bool TMATSParser::MapAttrs(const std::string& key_attr, const std::string& value
 }
 
 
-void TMATSParser::MapUnilateralAttrs(const std::vector<std::string>& key_attrs, 
+bool TMATSParser::MapUnilateralAttrs(const std::set<std::string>& key_attrs, 
     unilateral_map& uni_map)
 {
-
+    bool retval = true;
+    for(std::set<std::string>::const_iterator it = key_attrs.cbegin(); 
+        it != key_attrs.cend(); it++)
+    {
+        subattr_map index_to_val_map;
+        if (!ParseLines(*it, index_to_val_map))
+        {
+            printf("TMATSParser::MapUnilateralAttrs: Failed to generate "
+                "code name regex for %s\n", it->c_str());
+            retval = false;
+        }
+        for(subattr_map::const_iterator it2 = index_to_val_map.cbegin();
+            it2 != index_to_val_map.cend(); it2++)
+        {
+            if (uni_map.count(it2->first) == 0)
+            {
+                std::map<std::string, std::string> code_to_val_map{{*it, 
+                    it2->second}};
+                uni_map[it2->first] = code_to_val_map;
+            }
+            else
+            {
+                uni_map.at(it2->first)[*it] = it2->second;
+            }
+        }
+    }
+    return retval;
 }
 
 

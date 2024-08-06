@@ -25,6 +25,8 @@ private:
 	cmap chanid_to_429_format_;
     cmapvec	chanid_to_429_subchans_;
 	cmapmap chanid_to_429_subchan_and_name_;
+    unilateral_map pcm_index_to_code_and_values_;
+
 
 public:
 	const cmap& chanid_to_source_map;
@@ -32,6 +34,7 @@ public:
 	const cmap& chanid_to_429_format;
 	const cmapvec& chanid_to_429_subchans;
 	const cmapmap& chanid_to_429_subchan_and_name;
+    const unilateral_map& pcm_index_to_code_and_values;
 
     static const std::map<Ch10PacketType, std::string> TMATS_channel_data_type_map_;
     TMATSData();

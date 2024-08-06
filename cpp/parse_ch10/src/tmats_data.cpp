@@ -4,7 +4,8 @@ TMATSData::TMATSData() : chanid_to_source_map(chanid_to_source_map_),
     chanid_to_type_map(chanid_to_type_map_),
     chanid_to_429_format(chanid_to_429_format_),
     chanid_to_429_subchans(chanid_to_429_subchans_),
-    chanid_to_429_subchan_and_name(chanid_to_429_subchan_and_name_)
+    chanid_to_429_subchan_and_name(chanid_to_429_subchan_and_name_),
+    pcm_index_to_code_and_values(pcm_index_to_code_and_values_)
 {}
 
 const std::map<Ch10PacketType, std::string> TMATSData::TMATS_channel_data_type_map_ = {
@@ -37,6 +38,18 @@ bool TMATSData::Parse(const std::string& tmats_data,
     
         CombineMaps(chanid_to_429index_and_subchan, chanid_to_429index_and_name,
             chanid_to_429_subchan_and_name_);
+    }
+    if(parsed_pkt_types.count(Ch10PacketType::PCM_F1) == 1)
+    {
+        std::set<std::string> required_attrs{};
+        std::set<std::string> optional_attrs{};
+        std::set<std::string> all_attrs;
+        all_attrs.insert(required_attrs.begin(), required_attrs.end());
+        all_attrs.insert(optional_attrs.begin(), optional_attrs.end());
+        if(!parser.MapUnilateralAttrs(all_attrs, pcm_index_to_code_and_values_))
+        {
+            //todo print missing required attrs info
+        }
     }
     return true;
 }

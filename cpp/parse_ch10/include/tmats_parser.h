@@ -77,10 +77,15 @@ class TMATSParser
                         "P-d\DN", etc. 
         uni_map     --> Unilateral map to be populated. 
 
-    If a key attribute can't be found in the TMATS data, then
-    populate the value mapped to the key with "null". 
+    If a key attribute can't be found in the TMATS data for any index
+    or for a particular index, then the key_attr value will not be
+    present for the given index. 
+
+    Return:
+        False if an attritute key doesn't generate a regex, otherwise
+        true. 
     */
-    void MapUnilateralAttrs(const std::vector<std::string>& key_attrs, 
+    bool MapUnilateralAttrs(const std::set<std::string>& key_attrs, 
         unilateral_map& uni_map);
 
     /*

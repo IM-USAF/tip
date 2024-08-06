@@ -261,21 +261,29 @@ TEST_F(TMATSParserTest, MapUnilateralAttrs)
     // R"(P-4\DLN:pcm4;)"
     // R"(P-1\DLN:pcm1;)"
     // R"(P-1\D4:N;)"
-    std::vector<std::string> attrs{"P-d\\F1", "P-d\\DLN",
+    std::set<std::string> attrs{"P-d\\F1", "P-d\\DLN",
         "P-d\\D4"};
     unilateral_map output;
-    parser_.MapUnilateralAttrs(attrs, output);
+    ASSERT_TRUE(parser_.MapUnilateralAttrs(attrs, output));
 
-    ASSERT_EQ(3, output.size());
+    ASSERT_EQ(2, output.size());
     ASSERT_EQ(1, output.count(1));
     ASSERT_EQ(1, output.count(4));
-    ASSERT_EQ(3, output.at(4).size());
+    ASSERT_EQ(2, output.at(4).size());
     ASSERT_EQ(3, output.at(1).size());
     ASSERT_EQ("16", output.at(1).at("P-d\\F1"));
     ASSERT_EQ("pcm1", output.at(1).at("P-d\\DLN"));
     ASSERT_EQ("N", output.at(1).at("P-d\\D4"));
     ASSERT_EQ("20", output.at(4).at("P-d\\F1"));
     ASSERT_EQ("pcm4", output.at(4).at("P-d\\DLN"));
+    ASSERT_EQ(0, output.at(4).count("P-d\\D4"));
+}
+
+TEST_F(TMATSParserTest, MapUnilateralAttrsFailRegex)
+{
+    std::set<std::string> attrs{"G\\106"};
+    unilateral_map output;
+    ASSERT_FALSE(parser_.MapUnilateralAttrs(attrs, output));
 }
 
 TEST_F(TMATSParserTest, ParseLinesSingleVar)
