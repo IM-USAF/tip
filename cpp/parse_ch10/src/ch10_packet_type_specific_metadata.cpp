@@ -298,4 +298,33 @@ bool Ch10PacketTypeSpecificMetadataFunctions::CombineChannelIDToBusNumbersToLabe
     return true;
 }
 
+bool Ch10PacketTypeSpecificMetadataFunctions::PopulatePCMDataObject(
+    const std::map<std::string, std::string>& code_to_vals, 
+    Ch10PCMTMATSData& pcm_data)
+{
+    // Note: this function should only be used after verification
+    // that required tmats attributes are present. This is accomplished
+    // with TMATSParser::ParsePCMF1Data in TMATSData::Parse.
+    ParseText pt;
+    std::string code = "P-d\\DLN";
+    if(it_.IsKeyInMap(code_to_vals, code))
+        pcm_data.data_link_name_ = code_to_vals.at("P-d\\DLN");
+    
+    code = "P-d\\D2";
+    if(it_.IsKeyInMap(code_to_vals, code))
+    {
+        double temp_val = 0.0;
+        if(!pt.ConvertDouble(code_to_vals.at(code), temp_val))
+        {
+            spdlog::get("pm_logger")->error("PopulatePCMDataObject: Code "
+            "{:s} for attribute {:s} failed to conver to float", 
+            code, "bit_rate_");
+            return false;
+        }
+        pcm_data.bit_rate_ = temp_val;
+    }
+    return true;
+}
+
+
 

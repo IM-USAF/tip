@@ -41,18 +41,20 @@ bool TMATSData::Parse(const std::string& tmats_data,
     }
     if(parsed_pkt_types.count(Ch10PacketType::PCM_F1) == 1)
     {
-        std::set<std::string> required_attrs{};
-        std::set<std::string> optional_attrs{};
-        std::set<std::string> all_attrs;
-        all_attrs.insert(required_attrs.begin(), required_attrs.end());
-        all_attrs.insert(optional_attrs.begin(), optional_attrs.end());
-        if(!parser.MapUnilateralAttrs(all_attrs, pcm_index_to_code_and_values_))
-        {
-            //todo print missing required attrs info
-        }
+        std::set<std::string> pcm_req_attrs{"P-d\\TF", "P-d\\MF1", "P-d\\MF2",
+            "P-d\\MF\\N"};
+        std::set<std::string> pcm_opt_attrs{"P-d\\DLN", "P-d\\D1",
+            "P-d\\D2", "P-d\\D3","P-d\\D4","P-d\\D5","P-d\\D6","P-d\\D7",
+            "P-d\\D8", "P-d\\F1", "P-d\\F2", "P-d\\F3", "P-d\\F4", 
+            "P-d\\CRC", "P-d\\CRCCB", "P-d\\CRCDB", "P-d\\CRCDN", "P-d\\MF3"};
+
+        if(!parser.ParsePCMF1Data(pcm_index_to_code_and_values_, 
+            pcm_req_attrs, pcm_opt_attrs))
+            return false;
     }
     return true;
 }
+
 
 void TMATSData::CombineMaps(const cmapmap& map1, const cmapmap& map2, 
     cmapmap& outmap) const

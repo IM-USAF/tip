@@ -286,6 +286,62 @@ TEST_F(TMATSParserTest, MapUnilateralAttrsFailRegex)
     ASSERT_FALSE(parser_.MapUnilateralAttrs(attrs, output));
 }
 
+TEST_F(TMATSParserTest, ParsePCMF1DataRegexFail)
+{
+    std::set<std::string> req_attrs{"G\\106"};
+    std::set<std::string> opt_attrs{"P-d\\DLN"};
+    unilateral_map output;
+    ASSERT_FALSE(parser_.ParsePCMF1Data(output, req_attrs, opt_attrs));
+}
+
+TEST_F(TMATSParserTest, ParsePCMF1Data)
+{
+    // R"(P-1\F1:16;)"
+    // R"(P-4\F1:20;)"
+    // R"(P-4\DLN:pcm4;)"
+    // R"(P-1\D4:N;)"
+    // R"(P-1\DLN:pcm1;)"
+    std::set<std::string> req_attrs{"P-d\\F1"};
+    std::set<std::string> opt_attrs{"P-d\\DLN"};
+    unilateral_map output;
+    ASSERT_TRUE(parser_.ParsePCMF1Data(output, req_attrs, opt_attrs));
+    ASSERT_EQ(2, output.size());
+    ASSERT_EQ(1, output.count(1));
+    ASSERT_EQ(1, output.count(4));
+    ASSERT_EQ(2, output.at(4).size());
+    ASSERT_EQ(2, output.at(1).size());
+    ASSERT_EQ("16", output.at(1).at("P-d\\F1"));
+    ASSERT_EQ("pcm1", output.at(1).at("P-d\\DLN"));
+    ASSERT_EQ("20", output.at(4).at("P-d\\F1"));
+    ASSERT_EQ("pcm4", output.at(4).at("P-d\\DLN"));
+}
+
+TEST_F(TMATSParserTest, ParsePCMF1DataMissingReq)
+{
+    // R"(P-1\F1:16;)"
+    // R"(P-4\F1:20;)"
+    // R"(P-4\DLN:pcm4;)"
+    // R"(P-1\D4:N;)"
+    // R"(P-1\DLN:pcm1;)"
+    std::set<std::string> req_attrs{"P-d\\F1", "P-d\\D4"};
+    std::set<std::string> opt_attrs{"P-d\\DLN"};
+    unilateral_map output;
+    ASSERT_FALSE(parser_.ParsePCMF1Data(output, req_attrs, opt_attrs));
+}
+
+TEST_F(TMATSParserTest, ParsePCMF1DataMissingOpt)
+{
+    // R"(P-1\F1:16;)"
+    // R"(P-4\F1:20;)"
+    // R"(P-4\DLN:pcm4;)"
+    // R"(P-1\D4:N;)"
+    // R"(P-1\DLN:pcm1;)"
+    std::set<std::string> req_attrs{"P-d\\F1", "P-d\\DLN"};
+    std::set<std::string> opt_attrs{"P-d\\D4"};
+    unilateral_map output;
+    ASSERT_TRUE(parser_.ParsePCMF1Data(output, req_attrs, opt_attrs));
+}
+
 TEST_F(TMATSParserTest, ParseLinesSingleVar)
 {
     ASSERT_TRUE(parser_.ParseLines("G\\DSI-x", "G\\DST-x", keys_, values_));

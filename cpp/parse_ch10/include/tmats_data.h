@@ -128,6 +128,7 @@ public:
         Filtered input_map
     */
     virtual cmap FilterByChannelIDToType(const cmap& type_map, const cmap& input_map) const;
+
 };
 
 

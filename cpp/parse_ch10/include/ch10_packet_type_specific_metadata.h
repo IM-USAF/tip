@@ -7,9 +7,11 @@
 #include <set>
 #include "ch10_context.h"
 #include "iterable_tools.h"
+#include "parse_text.h"
 #include "md_category_map.h"
 #include "tmats_data.h"
 #include "ch10_packet_type.h"
+#include "ch10_pcm_tmats_data.h"
 #include "spdlog/spdlog.h"
 
 
@@ -164,6 +166,22 @@ class Ch10PacketTypeSpecificMetadataFunctions
                                                             output_chanid_busnumbers_labels_map,
             const std::vector<std::map<uint32_t, std::map<uint32_t, std::set<uint16_t>>>>&
                                                             chanid_busnumbers_labels_maps) const;
+                                                        
+        /*
+        Assign and cast values from a map of tmats codes to string values to 
+        a Ch10PCMTMATSData object.
+
+        Args:
+            code_to_vals    --> string:string map of codes to values
+            pcm_data        --> Reference to CH10PCMTMATSData object
+
+        Return:
+            False if a value can't be casted to the correct type, 
+            otherwise true.
+
+        */
+        bool PopulatePCMDataObject(const std::map<std::string, std::string>& code_to_vals, 
+            Ch10PCMTMATSData& pcm_data);
 
 };
 

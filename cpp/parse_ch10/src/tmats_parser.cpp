@@ -195,6 +195,34 @@ bool TMATSParser::MapUnilateralAttrs(const std::set<std::string>& key_attrs,
     return retval;
 }
 
+bool TMATSParser::ParsePCMF1Data(unilateral_map& uni_map, 
+    std::set<std::string> req_attrs, std::set<std::string> opt_attrs)
+{
+    IterableTools iter;
+    std::set<std::string> all_attrs = iter.Union(req_attrs, opt_attrs);
+    if (!MapUnilateralAttrs(all_attrs, uni_map))
+        return false;
+
+    bool retval = true;
+    for (unilateral_map::const_iterator it = uni_map.cbegin();
+        it != uni_map.cend(); it++)
+    {
+        for(std::set<std::string>::const_iterator attr = req_attrs.cbegin();
+            attr != req_attrs.cend(); attr++)
+        {
+            if (!iter.IsKeyInMap(it->second, *attr))
+            {
+                printf("TMATSParser::ParsePCMF1Data: Required attribute "
+                "\"%s\" not found in TMATS matter for PCM attributes "
+                "index {:d}\n", attr->c_str(), it->first);
+                retval = false;
+            }
+        }
+    }
+    return retval;
+}
+
+
 
 bool TMATSParser::ParseLines(std::string key_attr, subattr_map& vals)
 {
