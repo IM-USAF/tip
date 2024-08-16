@@ -1,6 +1,7 @@
 #include "ch10_packet_type_specific_metadata.h"
 
-Ch10PacketTypeSpecificMetadataFunctions::Ch10PacketTypeSpecificMetadataFunctions() : it_()
+Ch10PacketTypeSpecificMetadataFunctions::Ch10PacketTypeSpecificMetadataFunctions() : 
+    it_(), pt_()
 {}
 
 
@@ -304,24 +305,28 @@ bool Ch10PacketTypeSpecificMetadataFunctions::PopulatePCMDataObject(
 {
     // Note: this function should only be used after verification
     // that required tmats attributes are present. This is accomplished
-    // with TMATSParser::ParsePCMF1Data in TMATSData::Parse.
-    ParseText pt;
-    std::string code = "P-d\\DLN";
-    if(it_.IsKeyInMap(code_to_vals, code))
-        pcm_data.data_link_name_ = code_to_vals.at("P-d\\DLN");
-    
-    code = "P-d\\D2";
-    if(it_.IsKeyInMap(code_to_vals, code))
+    // with TMATSParser::ParsePCMF1Data in TMATSData::Parse. This 
+    // function only checks if present tmats attributes can be casted
+    // to the corresponding type and assigned to the corresponding
+    // member variable of Ch10PCMTMATSDATA. 
+    for(std::map<std::string, std::string>::const_iterator it = code_to_vals.cbegin();
+        it != code_to_vals.cend(); ++it)
     {
-        double temp_val = 0.0;
-        if(!pt.ConvertDouble(code_to_vals.at(code), temp_val))
+        if(pcm_data.code_to_str_vals_map_.count(it->first) == 1)
         {
-            spdlog::get("pm_logger")->error("PopulatePCMDataObject: Code "
-            "{:s} for attribute {:s} failed to conver to float", 
-            code, "bit_rate_");
-            return false;
+            POPFAIL(SetPCMDataValue(it->second, pcm_data.code_to_str_vals_map_.at(it->first)),
+                it->second.c_str(), it->first.c_str())
         }
-        pcm_data.bit_rate_ = temp_val;
+        else if(pcm_data.code_to_float_vals_map_.count(it->first) == 1)
+        {
+            POPFAIL(SetPCMDataValue(it->second, pcm_data.code_to_float_vals_map_.at(it->first)),
+                it->second.c_str(), it->first.c_str())
+        }
+        else if(pcm_data.code_to_int_vals_map_.count(it->first) == 1)
+        {
+            POPFAIL(SetPCMDataValue(it->second, pcm_data.code_to_int_vals_map_.at(it->first)),
+                it->second.c_str(), it->first.c_str())
+        }
     }
     return true;
 }

@@ -2,6 +2,7 @@
 #define CH10_PCM_TMATS_DATA_H_
 
 #include <string>
+#include <map>
 
 class Ch10PCMTMATSData
 {
@@ -31,6 +32,10 @@ class Ch10PCMTMATSData
         int bits_in_min_frame_;
         std::string sync_type_;
 
+        const std::map<std::string, int*> code_to_int_vals_map_;
+        const std::map<std::string, float*> code_to_float_vals_map_;
+        const std::map<std::string, std::string*> code_to_str_vals_map_;
+
         static const std::string null_indicator_;
 
         Ch10PCMTMATSData() : common_word_length_(-1), word_transfer_order_(null_indicator_),
@@ -42,8 +47,86 @@ class Ch10PCMTMATSData
             polarity_(null_indicator_), auto_pol_correction_(null_indicator_),
             data_direction_(null_indicator_), data_randomized_(null_indicator_),
             randomizer_type_(null_indicator_), type_format_(null_indicator_),
-            parity_transfer_order_(null_indicator_), sync_type_(null_indicator_)
+            parity_transfer_order_(null_indicator_), sync_type_(null_indicator_),
+            code_to_int_vals_map_{
+                {"P-d\\F1", &common_word_length_},
+                {"P-d\\CRCCB", &crc_check_word_starting_bit_},
+                {"P-d\\CRCDB", &crc_data_start_bit_},
+                {"P-d\\CRCDN", &crc_data_number_of_bits_},
+                {"P-d\\MF\\N", &min_frames_in_maj_frame_},
+                {"P-d\\MF1", &words_in_min_frame_},
+                {"P-d\\MF2", &bits_in_min_frame_}
+            },
+            code_to_float_vals_map_{
+                {"P-d\\D2", &bit_rate_}
+            },
+            code_to_str_vals_map_{
+                {"P-d\\TF", &type_format_},
+                {"P-d\\DLN", &data_link_name_},
+                {"P-d\\D1", &pcm_code_},
+                {"P-d\\D3", &encrypted_},
+                {"P-d\\D4", &polarity_},
+                {"P-d\\D5", &auto_pol_correction_}, 
+                {"P-d\\D6", &data_direction_},
+                {"P-d\\D7", &data_randomized_},
+                {"P-d\\D8", &randomizer_type_},
+                {"P-d\\F2", &word_transfer_order_},
+                {"P-d\\F3", &parity_},
+                {"P-d\\F4", &parity_transfer_order_},
+                {"P-d\\CRC", &crc_},
+                {"P-d\\MF3", &sync_type_}
+            }
         {}
+        Ch10PCMTMATSData& operator=(const Ch10PCMTMATSData&);
+        /* Templatized setter to simplify downstream functions.
+
+        Return false if key is not in map.
+        */
+        // template <typename T>
+        // bool Set(const std::string& key, T& val);
 };
 
+// template <typename T>
+// bool Ch10PCMTMATSData::Set(const std::string& key, T& val)
+// {
+//     printf("CH10PCMTMATSData::Set: Type for key %s not handled! "
+//         "Specialize me!\n", key.c_str());
+//     return false;
+// }
+
+// template <typename T>
+// bool Ch10PCMTMATSData::Set<int>(const std::string& key, T& val)
+// {
+//     if (!code_to_int_vals_map_.count(key) == 1)
+//     {
+//         printf("CH10PCMTMATSData::Set<int>: key %s not map\n", key.c_str());
+//         return false;
+//     }
+//     *(code_to_int_vals_map_.at(key)) = val;
+//     return true;
+// }
+
+// template <typename T>
+// bool Ch10PCMTMATSData::Set<float>(const std::string& key, T& val)
+// {
+//     if (!code_to_float_vals_map_.count(key) == 1)
+//     {
+//         printf("CH10PCMTMATSData::Set<float>: key %s not map\n", key.c_str());
+//         return false;
+//     }
+//     *(code_to_float_vals_map_.at(key)) = val;
+//     return true;
+// }
+
+// template <typename T>
+// bool Ch10PCMTMATSData::Set<std::string>(const std::string& key, T& val)
+// {
+//     if (!code_to_str_vals_map_.count(key) == 1)
+//     {
+//         printf("CH10PCMTMATSData::Set<string>: key %s not map\n", key.c_str());
+//         return false;
+//     }
+//     *(code_to_str_vals_map_.at(key)) = val;
+//     return true;
+// }
 #endif  // CH10_PCM_TMATS_DATA_H_
