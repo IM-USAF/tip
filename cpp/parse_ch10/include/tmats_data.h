@@ -16,6 +16,8 @@
 using cmap = std::map<std::string, std::string>;
 using cmapvec = std::map<std::string, std::vector<std::string>>;
 using cmapmap = std::map<std::string, std::map<std::string, std::string>>;
+using pcmdata_map = std::map<int, Ch10PCMTMATSData>;
+
 
 class TMATSData
 {
@@ -25,7 +27,8 @@ private:
 	cmap chanid_to_429_format_;
     cmapvec	chanid_to_429_subchans_;
 	cmapmap chanid_to_429_subchan_and_name_;
-    unilateral_map pcm_index_to_code_and_values_;
+    // unilateral_map pcm_index_to_code_and_values_;
+    pcmdata_map tmats_pcm_data_map_;
 
 
 public:
@@ -34,7 +37,8 @@ public:
 	const cmap& chanid_to_429_format;
 	const cmapvec& chanid_to_429_subchans;
 	const cmapmap& chanid_to_429_subchan_and_name;
-    const unilateral_map& pcm_index_to_code_and_values;
+    // const unilateral_map& pcm_index_to_code_and_values;
+    const pcmdata_map tmats_pcm_data_map;
 
     static const std::map<Ch10PacketType, std::string> TMATS_channel_data_type_map_;
     TMATSData();
@@ -128,6 +132,16 @@ public:
         Filtered input_map
     */
     virtual cmap FilterByChannelIDToType(const cmap& type_map, const cmap& input_map) const;
+
+    /*
+    Sub routine for ::Parse which handles only PCM data parsing from
+    raw TMATs bytes to a pcmdata_map. 
+
+    Args:
+        parser  --> TMATsParser instantiated with TMATs matter
+
+    */
+    bool ParsePCMAttributes(TMATSParser& parser);
 
 };
 

@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include <set>
 
 class Ch10PCMTMATSData
 {
@@ -31,6 +32,9 @@ class Ch10PCMTMATSData
         int words_in_min_frame_;
         int bits_in_min_frame_;
         std::string sync_type_;
+
+        static const std::set<std::string> pcm_req_attrs_;
+        static const std::set<std::string> pcm_opt_attrs_;
 
         const std::map<std::string, int*> code_to_int_vals_map_;
         const std::map<std::string, float*> code_to_float_vals_map_;
@@ -78,55 +82,7 @@ class Ch10PCMTMATSData
             }
         {}
         Ch10PCMTMATSData& operator=(const Ch10PCMTMATSData&);
-        /* Templatized setter to simplify downstream functions.
-
-        Return false if key is not in map.
-        */
-        // template <typename T>
-        // bool Set(const std::string& key, T& val);
+        bool operator==(const Ch10PCMTMATSData&);
 };
 
-// template <typename T>
-// bool Ch10PCMTMATSData::Set(const std::string& key, T& val)
-// {
-//     printf("CH10PCMTMATSData::Set: Type for key %s not handled! "
-//         "Specialize me!\n", key.c_str());
-//     return false;
-// }
-
-// template <typename T>
-// bool Ch10PCMTMATSData::Set<int>(const std::string& key, T& val)
-// {
-//     if (!code_to_int_vals_map_.count(key) == 1)
-//     {
-//         printf("CH10PCMTMATSData::Set<int>: key %s not map\n", key.c_str());
-//         return false;
-//     }
-//     *(code_to_int_vals_map_.at(key)) = val;
-//     return true;
-// }
-
-// template <typename T>
-// bool Ch10PCMTMATSData::Set<float>(const std::string& key, T& val)
-// {
-//     if (!code_to_float_vals_map_.count(key) == 1)
-//     {
-//         printf("CH10PCMTMATSData::Set<float>: key %s not map\n", key.c_str());
-//         return false;
-//     }
-//     *(code_to_float_vals_map_.at(key)) = val;
-//     return true;
-// }
-
-// template <typename T>
-// bool Ch10PCMTMATSData::Set<std::string>(const std::string& key, T& val)
-// {
-//     if (!code_to_str_vals_map_.count(key) == 1)
-//     {
-//         printf("CH10PCMTMATSData::Set<string>: key %s not map\n", key.c_str());
-//         return false;
-//     }
-//     *(code_to_str_vals_map_.at(key)) = val;
-//     return true;
-// }
 #endif  // CH10_PCM_TMATS_DATA_H_

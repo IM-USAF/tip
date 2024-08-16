@@ -5,7 +5,8 @@ TMATSData::TMATSData() : chanid_to_source_map(chanid_to_source_map_),
     chanid_to_429_format(chanid_to_429_format_),
     chanid_to_429_subchans(chanid_to_429_subchans_),
     chanid_to_429_subchan_and_name(chanid_to_429_subchan_and_name_),
-    pcm_index_to_code_and_values(pcm_index_to_code_and_values_)
+    // pcm_index_to_code_and_values(pcm_index_to_code_and_values_)
+    tmats_pcm_data_map_(), tmats_pcm_data_map(tmats_pcm_data_map_)
 {}
 
 const std::map<Ch10PacketType, std::string> TMATSData::TMATS_channel_data_type_map_ = {
@@ -39,17 +40,12 @@ bool TMATSData::Parse(const std::string& tmats_data,
         CombineMaps(chanid_to_429index_and_subchan, chanid_to_429index_and_name,
             chanid_to_429_subchan_and_name_);
     }
+
+    // PCM F0
     if(parsed_pkt_types.count(Ch10PacketType::PCM_F1) == 1)
     {
-        std::set<std::string> pcm_req_attrs{"P-d\\TF", "P-d\\MF1", "P-d\\MF2",
-            "P-d\\MF\\N"};
-        std::set<std::string> pcm_opt_attrs{"P-d\\DLN", "P-d\\D1",
-            "P-d\\D2", "P-d\\D3","P-d\\D4","P-d\\D5","P-d\\D6","P-d\\D7",
-            "P-d\\D8", "P-d\\F1", "P-d\\F2", "P-d\\F3", "P-d\\F4", 
-            "P-d\\CRC", "P-d\\CRCCB", "P-d\\CRCDB", "P-d\\CRCDN", "P-d\\MF3"};
-
         if(!parser.ParsePCMF1Data(pcm_index_to_code_and_values_, 
-            pcm_req_attrs, pcm_opt_attrs))
+           Ch10PCMTMATSData::pcm_req_attrs_, Ch10PCMTMATSData::pcm_opt_attrs_))
             return false;
     }
     return true;

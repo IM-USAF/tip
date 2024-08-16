@@ -877,3 +877,62 @@ TEST_F(ParseManagerTest, ParseCh10)
 
     ASSERT_EQ(EX_OK, ParseCh10(work_unit_ptrs, &pmf, &pm, config));
 }
+
+TEST_F(ParseManagerTest, CopyTMATSDataToWorkersEmptyTMATS)
+{
+    size_t work_unit_count = 3;
+    std::vector<WorkUnit> work_units(work_unit_count);
+
+    std::vector<WorkUnit*> work_unit_ptrs;
+    for (std::vector<WorkUnit>::iterator it = work_units.begin(); it != work_units.end(); ++it)
+        work_unit_ptrs.push_back(&(*it));
+
+    // Define required TMATS vars --> Empty!!
+    const std::string TMATS = "";
+    
+    // Set TMATs matter of first worker according to teh assumptions of 
+    // the 
+    work_units.at(0).ctx_->AddTMATSMatter(TMATS);
+
+    ASSERT_FALSE(pmf.CopyTMATSDataToWorkers(work_unit_ptrs));
+}
+
+TEST_F(ParseManagerTest, CopyTMATSDataToWorkersSingleIndex)
+{
+    size_t work_unit_count = 3;
+    std::vector<WorkUnit> work_units(work_unit_count);
+
+    std::vector<WorkUnit*> work_unit_ptrs;
+    for (std::vector<WorkUnit>::iterator it = work_units.begin(); it != work_units.end(); ++it)
+        work_unit_ptrs.push_back(&(*it));
+
+    // Define required TMATS vars
+    const std::string TMATS =
+    R"(P-1\TF:typeformat;)"
+    "\n"
+    R"(P-1\MF1:10;)"
+    "\n"
+    R"(P-1\MF2:320;)"
+    "\n"
+    R"(P-1\MF\N:6;)"
+    "\n";
+
+    Ch10PCMTMATSData expected_pcmdata;
+    expected_pcmdata.type_format_ = "typeformat";
+    expected_pcmdata.words_in_min_frame_ = 10;
+    expected_pcmdata.bits_in_min_frame_ = 320;
+    expected_pcmdata.min_frames_in_maj_frame_ = 6;
+    // const Ch10PCMTMATSData pcmdata = expected_pcmdata;
+    
+    // Set TMATs matter of first worker according to teh assumptions of 
+    // the 
+    work_units.at(0).ctx_->AddTMATSMatter(TMATS);
+
+    ASSERT_TRUE(pmf.CopyTMATSDataToWorkers(work_unit_ptrs));
+    for(std::vector<WorkUnit*>::const_iterator it = work_unit_ptrs.cbegin();
+        it != work_unit_ptrs.cend(); ++it)
+    {
+        ASSERT_TRUE((*it)->ctx_->pcm_tmats_data_map.count(1) == 1);
+        ASSERT_TRUE(expected_pcmdata == (*it)->ctx_->pcm_tmats_data_map.at(1));
+    }
+}

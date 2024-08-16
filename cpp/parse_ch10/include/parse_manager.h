@@ -28,6 +28,7 @@
 #include "worker_config.h"
 #include "spdlog/spdlog.h"
 #include "ch10_packet_type.h"
+#include "ch10_pcm_tmats_data.h"
 #include "ch10_context.h"
 #include "parser_metadata.h"
 
@@ -168,6 +169,30 @@ class ParseManagerFunctions
 			const uint64_t& read_size, const uint32_t& append_read_size,
 			const uint64_t& total_size, std::ifstream& ch10_input_stream, const ParserPaths* parser_paths);
 
+		/*
+		Parse TMATs matter after first worker has completed to specifically
+		extract data that is relevant to PCM packets. Cast parsed values
+		and populate an object of Ch10PCMTMATSData then copy the object
+		to each instance of Ch10Context so all subsequent workers have access
+		to the PCM metadata. It is required that first worker (work_units[0])
+		has already parsed and stored TMATs matter for this function to
+		be meaningful. 
+
+		Args:
+		work_units			--> Vector of WorkUnit, each of which owns
+								a Ch10Context to which PCM data will
+								be copied.
+
+		Return:
+			False if a TMATs parsing error occurs, a TMATs metadata
+			attribute can't be casted, or a required TMATs attribute
+			isn't present, otherwise true. All parsing should stop if
+			this function fails AND PCM packets are present. 
+
+			Note: Check the last statement. This may not be universally
+			true. 	 
+		*/
+		bool CopyTMATSDataToWorkers(std::vector<WorkUnit*>& work_units);
 };
 
 class ParseManager

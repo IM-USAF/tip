@@ -201,7 +201,7 @@ int ParseManager::StartThreads(bool append_mode,
                     return EX_SOFTWARE;
                 active_thread_count = 0;
                 total_read_pos = work_units.at(worker_ind)->conf_.last_position_;
-                // parse tmats here
+                // if(!CopyTMATSDataToWorkers(work_units)) 
             }
             
             if((retcode_ = ActivateAvailableThread(pmf, append_mode, work_units, worker_shift_wait_ms,
@@ -436,5 +436,57 @@ bool ParseManagerFunctions::OpenCh10File(const ManagedPath& input_path, std::ifs
         return false;
     }
 
+    return true;
+}
+
+
+bool ParseManagerFunctions::CopyTMATSDataToWorkers(std::vector<WorkUnit*>& work_units)
+{
+    // Check if first worker has TMATs matter.
+    std::string tmats_raw = work_units.at(0)->ctx_->GetTMATSMatter();
+    if(tmats_raw == "")
+    {
+        spdlog::get("pm_logger")->error("CopyTMATSDataToWorkers: "
+        "First worker TMATs matter is an empty string");
+        return false;
+    }
+
+    // Parse PCM attributes from TMATs data
+    std::set<Ch10PacketType> pkts{Ch10PacketType::PCM_F1};
+    TMATSData tmats_data;
+    if(!tmats_data.Parse(tmats_raw, pkts))
+    {
+        spdlog::get("pm_logger")->error("CopyTMATSDataToWorkers: "
+        "Failed to parse TMATs attributes");
+        return false;
+    }
+
+    // Check presence of required attributes, cast to appropriate type,
+    // and configure Ch10PCMTMATSData object
+    Ch10PacketTypeSpecificMetadataFunctions mdf;
+    unilateral_map index_to_code_and_vals = tmats_data.pcm_index_to_code_and_values;
+    pcmdata_map pcmdata;
+    for (unilateral_map::const_iterator it = index_to_code_and_vals.cbegin();
+        it != index_to_code_and_vals.cend(); ++it)
+    {
+        Ch10PCMTMATSData temppcmdata;
+        spdlog::get("pm_logger")->debug("CopyTMATSDataToWorkers: "
+        "PopulatePCMDataObject for PCM TMATs index {:d}", it->first);
+        if(!mdf.PopulatePCMDataObject(it->second, temppcmdata))
+        {
+            spdlog::get("pm_logger")->error("CopyTMATSDataToWorkers: "
+            "PopulatePCMDataObject failed for PCM TMATs index {:d} due "
+            "to missing required "
+            "attributes or casting error", it->first);
+            return false;
+        }
+        pcmdata[it->first] = temppcmdata;
+    }
+
+    for(std::vector<WorkUnit*>::const_iterator it = work_units.cbegin();
+        it != work_units.cend(); it++)
+    {
+        (*it)->ctx_->SetPCMTMATSData(pcmdata);
+    } 
     return true;
 }

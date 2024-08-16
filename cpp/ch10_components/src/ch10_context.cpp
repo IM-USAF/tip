@@ -57,8 +57,8 @@ Ch10Context::Ch10Context(const uint64_t& abs_pos, uint16_t id) : absolute_positi
                                                                  tdf1csdw_vec(tdf1csdw_vec_),
                                                                  tdp_abs_time_vec(tdp_abs_time_vec_),
                                                                  tmats_matter_(),
-                                                                 pcm_tmats_data_(),
-                                                                 pcm_tmats_data(pcm_tmats_data_)
+                                                                 pcm_tmats_data_map_(),
+                                                                 pcm_tmats_data_map(pcm_tmats_data_map_)
 {
     CreateDefaultPacketTypeConfig(pkt_type_config_map_);
 }
@@ -118,16 +118,16 @@ Ch10Context::Ch10Context() : absolute_position_(0),
                              tdf1csdw_vec(tdf1csdw_vec_),
                              tdp_abs_time_vec(tdp_abs_time_vec_),
                              tmats_matter_(),
-                             pcm_tmats_data_(),
-                             pcm_tmats_data(pcm_tmats_data_)
+                             pcm_tmats_data_map_(),
+                             pcm_tmats_data_map(pcm_tmats_data_map_)
 {
     CreateDefaultPacketTypeConfig(pkt_type_config_map_);
 }
 
 
-void Ch10Context::SetPCMTMATSData(const Ch10PCMTMATSData& pcm_data)
+void Ch10Context::SetPCMTMATSData(const pcmdata_map& pcm_data)
 {
-    pcm_tmats_data_ = pcm_data;
+    pcm_tmats_data_map_ = pcm_data;
 }
 
 bool Ch10Context::IsPacketTypeEnabled(const Ch10PacketType& pkt_type)

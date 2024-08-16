@@ -34,9 +34,11 @@
 
 #include <fstream>
 
+
 class Ch10Context
 {
    private:
+    using pcmdata_map = std::map<int, Ch10PCMTMATSData>;
 
     // ID to control or generate thread-specific log output.
     uint16_t thread_id_;
@@ -168,7 +170,10 @@ class Ch10Context
     // Hold TMATS matter for later recording
     std::string tmats_matter_;
 
-    Ch10PCMTMATSData pcm_tmats_data_;
+    // Map of tmats PCM attributes common index to
+    // Ch10PCMTMATSData object populated with tmats
+    // attributes which share the index.
+    pcmdata_map pcm_tmats_data_map_;
 
    public:
     const uint16_t& thread_id;
@@ -201,7 +206,7 @@ class Ch10Context
     const std::set<Ch10PacketType>& parsed_packet_types;
     const std::vector<TDF1CSDWFmt>& tdf1csdw_vec;
     const std::vector<uint64_t>& tdp_abs_time_vec;
-    const Ch10PCMTMATSData& pcm_tmats_data;
+    const pcmdata_map& pcm_tmats_data_map;
 
     Ch10Context(const uint64_t& abs_pos, uint16_t id = 0);
     Ch10Context();
@@ -235,7 +240,7 @@ class Ch10Context
 	*/
     bool IsConfigured();
 
-    void SetPCMTMATSData(const Ch10PCMTMATSData& pcm_data);
+    void SetPCMTMATSData(const pcmdata_map& pcm_data);
     void SetSearchingForTDP(bool should_search);
     virtual Ch10Status ContinueWithPacketType(uint8_t data_type);
 
