@@ -6,7 +6,8 @@ TMATSData::TMATSData() : chanid_to_source_map(chanid_to_source_map_),
     chanid_to_429_subchans(chanid_to_429_subchans_),
     chanid_to_429_subchan_and_name(chanid_to_429_subchan_and_name_),
     // pcm_index_to_code_and_values(pcm_index_to_code_and_values_)
-    tmats_pcm_data_map_(), tmats_pcm_data_map(tmats_pcm_data_map_)
+    tmats_pcm_data_map_(), tmats_pcm_data_map(tmats_pcm_data_map_),
+    pt_()
 {}
 
 const std::map<Ch10PacketType, std::string> TMATSData::TMATS_channel_data_type_map_ = {
@@ -41,11 +42,10 @@ bool TMATSData::Parse(const std::string& tmats_data,
             chanid_to_429_subchan_and_name_);
     }
 
-    // PCM F0
+    // PCM F1
     if(parsed_pkt_types.count(Ch10PacketType::PCM_F1) == 1)
     {
-        if(!parser.ParsePCMF1Data(pcm_index_to_code_and_values_, 
-           Ch10PCMTMATSData::pcm_req_attrs_, Ch10PCMTMATSData::pcm_opt_attrs_))
+        if(!ParsePCMAttributes(parser, tmats_pcm_data_map_))
             return false;
     }
     return true;
@@ -110,4 +110,63 @@ cmap TMATSData::FilterByChannelIDToType(const cmap& type_map, const cmap& input_
     }
 
     return filtered_map;
+}
+
+bool TMATSData::PopulatePCMDataObject(const cmap& code_to_vals, 
+    Ch10PCMTMATSData& pcm_data)
+{
+    // Note: this function should only be used after verification
+    // that required tmats attributes are present. This is accomplished
+    // with TMATSParser::ParsePCMF1Data in TMATSData::Parse. This 
+    // function only checks if present tmats attributes can be casted
+    // to the corresponding type and assigned to the corresponding
+    // member variable of Ch10PCMTMATSDATA. 
+    for(std::map<std::string, std::string>::const_iterator it = code_to_vals.cbegin();
+        it != code_to_vals.cend(); ++it)
+    {
+        if(pcm_data.code_to_str_vals_map_.count(it->first) == 1)
+        {
+            POPFAIL(SetPCMDataValue(it->second, pcm_data.code_to_str_vals_map_.at(it->first)),
+                it->second.c_str(), it->first.c_str())
+        }
+        else if(pcm_data.code_to_float_vals_map_.count(it->first) == 1)
+        {
+            POPFAIL(SetPCMDataValue(it->second, pcm_data.code_to_float_vals_map_.at(it->first)),
+                it->second.c_str(), it->first.c_str())
+        }
+        else if(pcm_data.code_to_int_vals_map_.count(it->first) == 1)
+        {
+            POPFAIL(SetPCMDataValue(it->second, pcm_data.code_to_int_vals_map_.at(it->first)),
+                it->second.c_str(), it->first.c_str())
+        }
+    }
+    return true;
+}
+
+
+bool TMATSData::ParsePCMAttributes(TMATSParser& parser, pcmdata_map& pcmdata)
+{
+    if(!parser.ParsePCMF1Data(pcm_index_to_code_and_values_, 
+        Ch10PCMTMATSData::pcm_req_attrs_, Ch10PCMTMATSData::pcm_opt_attrs_))
+        return false;
+
+    // Check presence of required attributes, cast to appropriate type,
+    // and configure Ch10PCMTMATSData object
+    for (unilateral_map::const_iterator it = pcm_index_to_code_and_values_.cbegin();
+        it != pcm_index_to_code_and_values_.cend(); ++it)
+    {
+        Ch10PCMTMATSData temppcmdata;
+        spdlog::get("pm_logger")->debug("ParsePCMAttributes: "
+        "PopulatePCMDataObject for PCM TMATs index {:d}", it->first);
+        if(!PopulatePCMDataObject(it->second, temppcmdata))
+        {
+            spdlog::get("pm_logger")->error("ParsePCMAttributes: "
+            "PopulatePCMDataObject failed for PCM TMATs index {:d} due "
+            "to missing required "
+            "attributes or casting error", it->first);
+            return false;
+        }
+        pcmdata[it->first] = temppcmdata;
+    }
+    return true;
 }

@@ -41,7 +41,7 @@ Ch10PCMTMATSData& Ch10PCMTMATSData::operator=(const Ch10PCMTMATSData& input)
     return *this;
 }
 
-bool Ch10PCMTMATSData::operator==(const Ch10PCMTMATSData& input)
+bool Ch10PCMTMATSData::operator==(const Ch10PCMTMATSData& input) const
 {
     return (this->data_link_name_ == input.data_link_name_ &&
         this->pcm_code_ == input.pcm_code_ &&

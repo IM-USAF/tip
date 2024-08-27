@@ -1,7 +1,7 @@
 #include "ch10_packet_type_specific_metadata.h"
 
 Ch10PacketTypeSpecificMetadataFunctions::Ch10PacketTypeSpecificMetadataFunctions() : 
-    it_(), pt_()
+    it_()//, pt_()
 {}
 
 
@@ -296,38 +296,6 @@ bool Ch10PacketTypeSpecificMetadataFunctions::CombineChannelIDToBusNumbersToLabe
 
     output_chanid_busnumbers_labels_map = output_map;
 
-    return true;
-}
-
-bool Ch10PacketTypeSpecificMetadataFunctions::PopulatePCMDataObject(
-    const std::map<std::string, std::string>& code_to_vals, 
-    Ch10PCMTMATSData& pcm_data)
-{
-    // Note: this function should only be used after verification
-    // that required tmats attributes are present. This is accomplished
-    // with TMATSParser::ParsePCMF1Data in TMATSData::Parse. This 
-    // function only checks if present tmats attributes can be casted
-    // to the corresponding type and assigned to the corresponding
-    // member variable of Ch10PCMTMATSDATA. 
-    for(std::map<std::string, std::string>::const_iterator it = code_to_vals.cbegin();
-        it != code_to_vals.cend(); ++it)
-    {
-        if(pcm_data.code_to_str_vals_map_.count(it->first) == 1)
-        {
-            POPFAIL(SetPCMDataValue(it->second, pcm_data.code_to_str_vals_map_.at(it->first)),
-                it->second.c_str(), it->first.c_str())
-        }
-        else if(pcm_data.code_to_float_vals_map_.count(it->first) == 1)
-        {
-            POPFAIL(SetPCMDataValue(it->second, pcm_data.code_to_float_vals_map_.at(it->first)),
-                it->second.c_str(), it->first.c_str())
-        }
-        else if(pcm_data.code_to_int_vals_map_.count(it->first) == 1)
-        {
-            POPFAIL(SetPCMDataValue(it->second, pcm_data.code_to_int_vals_map_.at(it->first)),
-                it->second.c_str(), it->first.c_str())
-        }
-    }
     return true;
 }
 

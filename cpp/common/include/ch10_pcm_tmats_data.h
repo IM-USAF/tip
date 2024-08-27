@@ -82,7 +82,7 @@ class Ch10PCMTMATSData
             }
         {}
         Ch10PCMTMATSData& operator=(const Ch10PCMTMATSData&);
-        bool operator==(const Ch10PCMTMATSData&);
+        bool operator==(const Ch10PCMTMATSData&) const;
 };
 
 #endif  // CH10_PCM_TMATS_DATA_H_

@@ -8,10 +8,12 @@
 #include "spdlog/spdlog.h"
 #include "iterable_tools.h"
 #include "tmats_parser.h"
+#include "parse_text.h"
 #include "ch10_pcm_tmats_data.h"
 #include "ch10_packet_type.h"
 
 #define RETFAIL(x, y) if(!(x)) {SPDLOG_WARN("TMATSData::Parse: Failed to MapAttrs: " y); return false; }
+#define POPFAIL(x, y, z) if(!(x)) {SPDLOG_ERROR("PopulatePCMDataObject: Failed to set value \"{:s}\" for code \"{:s}\"", y, z); return false; }
 
 using cmap = std::map<std::string, std::string>;
 using cmapvec = std::map<std::string, std::vector<std::string>>;
@@ -27,8 +29,9 @@ private:
 	cmap chanid_to_429_format_;
     cmapvec	chanid_to_429_subchans_;
 	cmapmap chanid_to_429_subchan_and_name_;
-    // unilateral_map pcm_index_to_code_and_values_;
+    unilateral_map pcm_index_to_code_and_values_;
     pcmdata_map tmats_pcm_data_map_;
+    ParseText pt_;
 
 
 public:
@@ -133,17 +136,99 @@ public:
     */
     virtual cmap FilterByChannelIDToType(const cmap& type_map, const cmap& input_map) const;
 
+
+    /*
+    Assign and cast values from a map of tmats codes to string values to 
+    a Ch10PCMTMATSData object.
+
+    Args:
+        code_to_vals    --> string:string map of codes to values
+        pcm_data        --> Reference to CH10PCMTMATSData object
+
+    Return:
+        False if a value can't be casted to the correct type, 
+        otherwise true.
+
+    */
+    bool PopulatePCMDataObject(const cmap& code_to_vals, 
+        Ch10PCMTMATSData& pcm_data);
+
+
+    /*
+    Helper functions for PopulatePCMDataObject. Cast and set the 
+    value of relevant Ch10PCMTMATSData member.
+
+    Args:
+        val     --> String value to be casted and assigned to a 
+                    member of Ch10PCMTMATSData object.
+        dest_prt--> Pointer to value which will be assigned.
+
+    Return:
+        False if the string value can't be casted to the appropriate
+        type or if the tmats code doesn't match the associated 
+        CH10PCMTMATSData::code_to_*_vals_map_, otherwise true.
+    */
+    template<typename T>
+    bool SetPCMDataValue(const std::string& val, T* dest_ptr);
+
+
     /*
     Sub routine for ::Parse which handles only PCM data parsing from
     raw TMATs bytes to a pcmdata_map. 
 
     Args:
         parser  --> TMATsParser instantiated with TMATs matter
+        pcmdata --> pcmdata_map type to populate with parsed
+                    PCM data
 
+    Return:
+        False if an error occurs which should halt parsing altogether.
     */
-    bool ParsePCMAttributes(TMATSParser& parser);
+    bool ParsePCMAttributes(TMATSParser& parser, pcmdata_map& pcmdata);
 
 };
 
+template<typename T>
+bool TMATSData::SetPCMDataValue(const std::string& val, T* dest_ptr)
+{
+    SPDLOG_ERROR("SetPCMDataValue: dest_ptr type "
+    "does not have a specialized template function.");
+    return false;
+}
+
+template<>
+inline bool TMATSData::SetPCMDataValue<std::string>(const std::string& val, std::string* dest_ptr)
+{
+    *dest_ptr = val;
+    return true;
+}
+
+template<>
+inline bool TMATSData::SetPCMDataValue<float>(const std::string& val, float* dest_ptr)
+{
+    double temp_val = 0.0;
+    if(!pt_.ConvertDouble(val, temp_val))
+    {
+        SPDLOG_ERROR("SetPCMDataValue: Failed to "
+        "convert value {:s} to float", val);
+        return false;
+    }
+    *dest_ptr = static_cast<float>(temp_val);
+    return true;
+}
+
+template<>
+inline bool TMATSData::SetPCMDataValue<int>(const std::string& val, int* dest_ptr)
+{
+    int temp_val = 0;
+    if(!pt_.ConvertInt(val, temp_val))
+    {
+        SPDLOG_ERROR("SetPCMDataValue: Failed to "
+        "convert value {:s} to int", val);
+        return false;
+    }
+    *dest_ptr = temp_val;
+    return true;
+}
 
 #endif  // TMATS_DATA_H_
