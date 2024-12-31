@@ -1,3 +1,5 @@
+#include <ctime>
+#include <limits>
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "ch10_packet_header_component.h"
@@ -36,6 +38,7 @@ class Ch10PacketHeaderComponentTest : public ::testing::Test
         pkt_hdr_fmt_.rtc1 = 0;          // set later
         pkt_hdr_fmt_.rtc2 = 0;          // set later
         pkt_hdr_fmt_.checksum = 0;      // set later
+        srand(time(NULL));
     }
 
     ~Ch10PacketHeaderComponentTest()
@@ -76,14 +79,15 @@ class Ch10PacketHeaderComponentTest : public ::testing::Test
         //corrected_body_and_footer_len, corrected_total_pkt_len);
         fake_body_and_footer8_.resize(corrected_body_and_footer_len);
         uint8_t sum = 0;
+        // printf("values:\n");
         for (int i = 0; i < corrected_body_and_footer_len - 1; i++)
         {
-            fake_body_and_footer8_[i] = (uint8_t)rand();
-            //printf("adding %hhu\n", fake_body_and_footer8_[i]);
+            fake_body_and_footer8_[i] = (uint8_t)(rand() % std::numeric_limits<uint8_t>::max());
+            // printf("%hhu, ", fake_body_and_footer8_[i]);
             sum += fake_body_and_footer8_[i];
         }
         fake_body_and_footer8_[corrected_body_and_footer_len - 1] = sum;
-        //printf("sum: %hhu\n", sum);
+        // printf("\nsum: %hhu\n", sum);
         return fake_body_and_footer8_.data();
     }
 
@@ -100,7 +104,7 @@ class Ch10PacketHeaderComponentTest : public ::testing::Test
         uint16_t sum = 0;
         for (int i = 0; i < data_units - 1; i++)
         {
-            fake_body_and_footer16_[i] = (uint16_t)rand();
+            fake_body_and_footer16_[i] = (uint16_t)(rand() % std::numeric_limits<uint16_t>::max());
             //printf("adding %hu\n", fake_body_and_footer16_[i]);
             sum += fake_body_and_footer16_[i];
         }
@@ -301,7 +305,7 @@ TEST_F(Ch10PacketHeaderComponentTest, VerifyDataChecksum8BitNoSecondaryFalse)
 
     // Add bad values by using incorrect packet length.
     status_ = ch10_pkt_hdr_comp_.VerifyDataChecksum(body_ptr_,
-                                                    pkt_hdr_fmt_.checksum_existence, corr_total_pkt_len + 4, pkt_hdr_fmt_.secondary_hdr);
+                                                    pkt_hdr_fmt_.checksum_existence, corr_total_pkt_len - 3, pkt_hdr_fmt_.secondary_hdr);
     EXPECT_EQ(status_, Ch10Status::CHECKSUM_FALSE);
 }
 
@@ -354,7 +358,7 @@ TEST_F(Ch10PacketHeaderComponentTest, VerifyDataChecksum16BitNoSecondaryFalse)
 
     // Add bad values by using incorrect packet length.
     status_ = ch10_pkt_hdr_comp_.VerifyDataChecksum(body_ptr_,
-                                                    pkt_hdr_fmt_.checksum_existence, corr_total_pkt_len + 4, pkt_hdr_fmt_.secondary_hdr);
+                                                    pkt_hdr_fmt_.checksum_existence, corr_total_pkt_len - 2, pkt_hdr_fmt_.secondary_hdr);
     EXPECT_EQ(status_, Ch10Status::CHECKSUM_FALSE);
 }
 
