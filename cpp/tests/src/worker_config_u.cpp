@@ -115,6 +115,30 @@ TEST_F(WorkerConfigTest, CheckNonAppendModeConfigIncorrectReadSizeLastWorker)
     EXPECT_FALSE(wc_.append_mode_);
 }
 
+TEST_F(WorkerConfigTest, CheckNonAppendModeConfigReadSizeGreaterTotalCh10Size)
+{
+    wc_.worker_index_ = 0;
+    wc_.total_worker_count_ = wc_.worker_index_ + 3;
+    wc_.final_worker_ = false;
+    wc_.bb_ = &mock_bb_;
+    std::ifstream input_stream;
+    wc_.input_stream_ = &input_stream;
+
+    wc_.total_bytes_ = 83828;
+    wc_.start_position_ = 0;
+    wc_.read_bytes_ = 100000;
+    wc_.append_mode_ = true;
+    
+    EXPECT_CALL(mock_bb_, Initialize(::testing::Ref(*wc_.input_stream_), 
+        wc_.total_bytes_, wc_.start_position_, wc_.read_bytes_))
+        .WillOnce(::testing::Return(wc_.total_bytes_));
+
+    ASSERT_TRUE(wc_.CheckNonAppendModeConfig());
+    EXPECT_EQ(true, wc_.final_worker_);
+    EXPECT_EQ(wc_.actual_read_bytes_, wc_.total_bytes_);
+    EXPECT_FALSE(wc_.append_mode_);
+}
+
 TEST_F(WorkerConfigTest, CheckNonAppendModeConfig)
 {
     wc_.worker_index_ = 13;

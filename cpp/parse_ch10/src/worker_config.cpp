@@ -31,7 +31,7 @@ bool WorkerConfig::CheckConfiguration()
         if (!CheckNonAppendModeConfig())
         {
             spdlog::get("pm_logger")->warn(
-                "ActivateWorker: ConfigureWorker failed during "
+                "ActivateWorker: WorkerConfig failed during "
                 "initial thread loading");
             return false;
         }
@@ -48,7 +48,7 @@ bool WorkerConfig::CheckNonAppendModeConfig()
     // Check for invalid worker_index
     if (this->worker_index_ > this->total_worker_count_ - 1)
     {
-        spdlog::get("pm_logger")->warn("ConfigureWorker: worker_index ({:d}) > worker_count ({:d}) - 1",
+        spdlog::get("pm_logger")->warn("WorkerConfig: worker_index ({:d}) > worker_count ({:d}) - 1",
             this->worker_index_, this->total_worker_count_);
         return false;
     }
@@ -65,7 +65,7 @@ bool WorkerConfig::CheckNonAppendModeConfig()
 
     this->append_mode_ = false;
 
-    spdlog::get("pm_logger")->debug("ConfigureWorker {:d}: start = {:d}, read size = {:d}", 
+    spdlog::get("pm_logger")->debug("WorkerConfig {:d}: start = {:d}, read size = {:d}", 
         this->worker_index_, this->start_position_, this->read_bytes_);
 
     this->actual_read_bytes_ = this->bb_->Initialize(*(this->input_stream_),
@@ -78,31 +78,30 @@ bool WorkerConfig::CheckNonAppendModeConfig()
     if (this->actual_read_bytes_ != this->read_bytes_)
     {
         spdlog::get("pm_logger")->debug(
-            "ConfigureWorker: worker {:d} actual read size ({:d}) "
+            "WorkerConfig: worker {:d} actual read size ({:d}) "
             "not equal to requested read size ({:d})",
             this->worker_index_, this->actual_read_bytes_, this->read_bytes_);
 
-        // If the last worker is being configured, it will undoubtedly reach the
-        // EOF and this will occur, which is not an error.
-        if ((this->worker_index_ == this->total_worker_count_ - 1) && 
-            (this->actual_read_bytes_ < this->read_bytes_))
-        {
-            spdlog::get("pm_logger")->debug("ConfigureWorker: Last worker reached EOF OK");
-            return true;
-        }
-
-        // Alternately, if this is the first worker and the configured read
+        // If this is the first worker and the configured read
         // size is greater than the total ch10 file size then there is no
         // expectation that the actual read size is equal to requested read
         // size.
         if((this->worker_index_ == 0) && 
             (this->actual_read_bytes_ == this->total_bytes_))
         {
-            spdlog::get("pm_logger")->debug("ConfigureWorker: First worker reached EOF OK");
-            spdlog::get("pm_logger")->error("ConfigureWorker: TEST ME!!!");
+            spdlog::get("pm_logger")->debug("WorkerConfig: First worker reached EOF OK");
+            this->final_worker_ = true;
             return true;
         }
 
+        // Alternately, if the last worker is being configured, it will undoubtedly reach the
+        // EOF and this will occur, which is not an error.
+        if ((this->worker_index_ == this->total_worker_count_ - 1) && 
+            (this->actual_read_bytes_ < this->read_bytes_))
+        {
+            spdlog::get("pm_logger")->debug("WorkerConfig: Last worker reached EOF OK");
+            return true;
+        }
         return false;
     }
     return true;
