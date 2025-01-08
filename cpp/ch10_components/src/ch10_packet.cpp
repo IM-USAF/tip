@@ -3,7 +3,8 @@
 void Ch10Packet::SetCh10ComponentParsers(Ch10PacketHeaderComponent* header_comp,
         Ch10TMATSComponent* tmats_comp, Ch10TDPComponent* tdp_comp,
         Ch101553F1Component* milstd1553_comp, Ch10VideoF0Component* video_comp,
-        Ch10EthernetF0Component* eth_comp, Ch10429F0Component* arinc429_comp)
+        Ch10EthernetF0Component* eth_comp, Ch10429F0Component* arinc429_comp,
+        Ch10PCMF1Component* pcmf1_comp)
 {
     header_ = header_comp;
     tmats_ = tmats_comp;
@@ -12,6 +13,7 @@ void Ch10Packet::SetCh10ComponentParsers(Ch10PacketHeaderComponent* header_comp,
     videof0_component_ = video_comp;
     ethernetf0_component_ = eth_comp;
     arinc429f0_component_ = arinc429_comp;
+    pcmf1_component_ = pcmf1_comp;
 }
 
 bool Ch10Packet::IsConfigured()
@@ -327,6 +329,13 @@ Ch10Status Ch10Packet::ParseBody()
             {
                 pkt_type_ = Ch10PacketType::ARINC429_F0;
                 arinc429f0_component_->Parse(data_ptr_);
+            }
+            break;
+        case static_cast<uint8_t>(Ch10PacketType::PCM_F1):
+            if(ctx_->IsPacketTypeEnabled(Ch10PacketType::PCM_F1))
+            {
+                pkt_type_ = Ch10PacketType::PCM_F1;
+                pcmf1_component_->Parse(data_ptr_);
             }
             break;
         default:

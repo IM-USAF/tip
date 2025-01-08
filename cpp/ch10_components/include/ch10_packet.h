@@ -10,6 +10,7 @@
 #include "ch10_arinc429f0_component.h"
 #include "ch10_videof0_component.h"
 #include "ch10_ethernetf0_component.h"
+#include "ch10_pcmf1_component.h"
 #include "binbuff.h"
 #include "ch10_status.h"
 #include "ch10_packet_header_component.h"
@@ -53,6 +54,7 @@ class Ch10Packet
     Ch10VideoF0Component* videof0_component_;
     Ch10EthernetF0Component* ethernetf0_component_;
     Ch10429F0Component* arinc429f0_component_;
+    Ch10PCMF1Component* pcmf1_component_;
 
     // Ch10 time calculation and manipulation
     Ch10Time* const ch10_time_;
@@ -66,7 +68,7 @@ class Ch10Packet
     const Ch10PacketType& current_pkt_type;
     Ch10Packet(BinBuff* const binbuff, Ch10Context* const context,
         Ch10Time* const ch10time) :
-        ch10_time_(ch10time), secondary_hdr_time_ns_(0), bb_(binbuff), ctx_(context), data_ptr_(nullptr), bb_response_(0), status_(Ch10Status::OK), temp_pkt_size_(0), pkt_type_(Ch10PacketType::NONE), current_pkt_type(pkt_type_), header_(nullptr), tmats_(nullptr), tdp_component_(nullptr), milstd1553f1_component_(nullptr), arinc429f0_component_(nullptr), videof0_component_(nullptr), ethernetf0_component_(nullptr)
+        ch10_time_(ch10time), secondary_hdr_time_ns_(0), bb_(binbuff), ctx_(context), data_ptr_(nullptr), bb_response_(0), status_(Ch10Status::OK), temp_pkt_size_(0), pkt_type_(Ch10PacketType::NONE), current_pkt_type(pkt_type_), header_(nullptr), tmats_(nullptr), tdp_component_(nullptr), milstd1553f1_component_(nullptr), arinc429f0_component_(nullptr), videof0_component_(nullptr), ethernetf0_component_(nullptr), pcmf1_component_(nullptr)
     {    }
 
 
@@ -81,11 +83,12 @@ class Ch10Packet
         video_comp      --> Pointer to Ch10VideoF0Component
         eth_comp        --> Pointer to Ch10EthernetF0Component
         arinc429_comp   --> Pointer to Ch10429F0Component
+        pcmf1_compo     --> Pointer to Ch10PCMF1Component
     */
     void SetCh10ComponentParsers(Ch10PacketHeaderComponent* header_comp, Ch10TMATSComponent* tmats_comp,
         Ch10TDPComponent* tdp_comp, Ch101553F1Component* milstd1553_comp,
         Ch10VideoF0Component* video_comp, Ch10EthernetF0Component* eth_comp,
-        Ch10429F0Component* arinc429_comp);
+        Ch10429F0Component* arinc429_comp, Ch10PCMF1Component* pcmf1_comp);
 
 
 

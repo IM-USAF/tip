@@ -214,7 +214,7 @@ bool TMATSParser::ParsePCMF1Data(unilateral_map& uni_map,
             {
                 printf("TMATSParser::ParsePCMF1Data: Required attribute "
                 "\"%s\" not found in TMATS matter for PCM attributes "
-                "index {:d}\n", attr->c_str(), it->first);
+                "index %d\n", attr->c_str(), it->first);
                 retval = false;
             }
         }

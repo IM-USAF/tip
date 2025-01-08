@@ -108,6 +108,7 @@ int ParseWorker::ParseBufferData(Ch10Context* ctx, BinBuff* bb)
     Ch10VideoF0Component vid(ctx);
     Ch10EthernetF0Component eth(ctx);
     Ch10429F0Component arinc429(ctx);
+    Ch10PCMF1Component pcmf1(ctx);
     Ch10Time ch10time;
 
     // Enable Pcap output if Ethernet data packet parsing is enabled.
@@ -119,7 +120,7 @@ int ParseWorker::ParseBufferData(Ch10Context* ctx, BinBuff* bb)
 
     // Instantiate Ch10Packet object
     Ch10Packet packet(bb, ctx, &ch10time);
-    packet.SetCh10ComponentParsers(&header, &tmats, &tdp, &milstd1553, &vid, &eth, &arinc429);
+    packet.SetCh10ComponentParsers(&header, &tmats, &tdp, &milstd1553, &vid, &eth, &arinc429, &pcmf1);
     if(!packet.IsConfigured())
         return 1;
 

@@ -186,6 +186,19 @@ public:
     */
     bool ParsePCMAttributes(TMATSParser& parser, pcmdata_map& pcmdata);
 
+
+    /*
+    Validate a populated Ch10PCMTMATSData object.
+
+    Args:
+        pcmtmatsdata    --> Populated Ch10PCMTMATSData object
+
+    Return:
+        False if a single member is out of bounds of IRIG 106 Chapter
+        4 specs. Otherwise true. 
+    */
+    bool ValidatePCMDataObject(const Ch10PCMTMATSData& pcmtmatsdata);
+
 };
 
 template<typename T>

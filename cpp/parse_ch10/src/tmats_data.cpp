@@ -166,7 +166,40 @@ bool TMATSData::ParsePCMAttributes(TMATSParser& parser, pcmdata_map& pcmdata)
             "attributes or casting error", it->first);
             return false;
         }
+
+        if(!ValidatePCMDataObject(temppcmdata))
+        {
+            spdlog::get("pm_logger")->error("ParsePCMAttributes: "
+            "ValidatePCMDataObject failed");
+            return false;
+        }
         pcmdata[it->first] = temppcmdata;
     }
+    return true;
+}
+
+
+bool TMATSData::ValidatePCMDataObject(const Ch10PCMTMATSData& pcmtmatsdata)
+{
+    // Note: There is already a check for values which must be populated
+    // by comparing to the default constructor initialized values of
+    // specific members. The populated/present value check is assumed to
+    // have already occurred prior to this validation step, so a comparison
+    // against the default value is not necessary. 
+
+    // Validate minor frame length
+    if(pcmtmatsdata.bits_in_min_frame_ > 8192)
+        return false;
+    if(pcmtmatsdata.words_in_min_frame_ > 1024)
+        return false;
+
+    // Validate minor fram sync pattern
+    if(pcmtmatsdata.min_frame_sync_pattern_len_ > 33 ||
+        pcmtmatsdata.min_frame_sync_pattern_len_ < 16)
+        return false;
+    if(pcmtmatsdata.min_frame_sync_pattern_bitdef_.size() != 
+        pcmtmatsdata.min_frame_sync_pattern_len_)
+        return false;
+
     return true;
 }

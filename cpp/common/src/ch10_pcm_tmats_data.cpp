@@ -3,7 +3,8 @@
 const std::string Ch10PCMTMATSData::null_indicator_ = "null";
 
 const std::set<std::string> Ch10PCMTMATSData::pcm_req_attrs_ = {
-    "P-d\\TF", "P-d\\MF1", "P-d\\MF2", "P-d\\MF\\N"};
+    "P-d\\TF", "P-d\\MF1", "P-d\\MF2", "P-d\\MF\\N", "P-d\\MF4", 
+    "P-d\\MF5"};
 
 const std::set<std::string> Ch10PCMTMATSData::pcm_opt_attrs_ = {
     "P-d\\DLN", "P-d\\D1", "P-d\\D2", "P-d\\D3","P-d\\D4","P-d\\D5",
@@ -37,6 +38,8 @@ Ch10PCMTMATSData& Ch10PCMTMATSData::operator=(const Ch10PCMTMATSData& input)
     this->words_in_min_frame_ = input.words_in_min_frame_;
     this->bits_in_min_frame_ = input.bits_in_min_frame_;
     this->sync_type_ = input.sync_type_;
+    this->min_frame_sync_pattern_len_ = input.min_frame_sync_pattern_len_;
+    this->min_frame_sync_pattern_bitdef_ = input.min_frame_sync_pattern_bitdef_;
 
     return *this;
 }
@@ -64,5 +67,7 @@ bool Ch10PCMTMATSData::operator==(const Ch10PCMTMATSData& input) const
         this->min_frames_in_maj_frame_ == input.min_frames_in_maj_frame_ &&
         this->words_in_min_frame_ == input.words_in_min_frame_ &&
         this->bits_in_min_frame_ == input.bits_in_min_frame_ &&
-        this->sync_type_ == input.sync_type_);
+        this->sync_type_ == input.sync_type_ &&
+        this->min_frame_sync_pattern_len_ == input.min_frame_sync_pattern_len_ &&
+        this->min_frame_sync_pattern_bitdef_ == input.min_frame_sync_pattern_bitdef_);
 }

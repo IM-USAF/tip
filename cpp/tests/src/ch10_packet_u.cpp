@@ -18,6 +18,7 @@
 #include "ch10_videof0_component_mock.h"
 #include "ch10_ethernetf0_component_mock.h"
 #include "ch10_arinc429f0_component_mock.h"
+#include "ch10_pcmf1_component_mock.h"
 
 using ::testing::Return;
 using ::testing::NiceMock;
@@ -37,6 +38,7 @@ class Ch10PacketTest : public ::testing::Test
     NiceMock<MockCh10VideoF0Component> mock_vid_;
     NiceMock<MockCh10EthernetF0Component> mock_eth_;
     NiceMock<MockCh10429F0Component> mock_arinc429_;
+    NiceMock<MockCh10PCMF1Component> mock_pcmf1_;
     Ch10Packet p_;
     uint64_t abs_pos_;
     bool found_tmats_;
@@ -45,13 +47,13 @@ class Ch10PacketTest : public ::testing::Test
         p_(&mock_bb_, &mock_ctx_, &mock_ch10_time_),
         mock_tmats_(&mock_ctx_), mock_tdp_(&mock_ctx_), mock_milstd1553_(&mock_ctx_), mock_vid_(&mock_ctx_),
         mock_eth_(&mock_ctx_), mock_arinc429_(&mock_ctx_), mock_hdr_(&mock_ctx_),
-        abs_pos_(58482882), found_tmats_(false)
+        abs_pos_(58482882), found_tmats_(false), mock_pcmf1_(&mock_ctx_)
     {}
 
     virtual void SetUp()
     {
         p_.SetCh10ComponentParsers(&mock_hdr_, &mock_tmats_, &mock_tdp_, &mock_milstd1553_,
-            &mock_vid_, &mock_eth_, &mock_arinc429_);
+            &mock_vid_, &mock_eth_, &mock_arinc429_, &mock_pcmf1_);
     }
 };
 
