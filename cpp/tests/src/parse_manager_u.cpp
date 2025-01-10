@@ -915,14 +915,20 @@ TEST_F(ParseManagerTest, CopyTMATSDataToWorkersSingleIndex)
     R"(P-1\MF2:320;)"
     "\n"
     R"(P-1\MF\N:6;)"
+    "\n"
+    R"(P-1\MF4:16;)"
+    "\n"
+    R"(P-1\MF5:1001100110011001;)"
     "\n";
+
 
     Ch10PCMTMATSData expected_pcmdata;
     expected_pcmdata.type_format_ = "typeformat";
     expected_pcmdata.words_in_min_frame_ = 10;
     expected_pcmdata.bits_in_min_frame_ = 320;
     expected_pcmdata.min_frames_in_maj_frame_ = 6;
-    // const Ch10PCMTMATSData pcmdata = expected_pcmdata;
+    expected_pcmdata.min_frame_sync_pattern_len_ = 16;
+    expected_pcmdata.min_frame_sync_pattern_bitdef_ = "1001100110011001";
     
     // Set TMATs matter of first worker according to teh assumptions of 
     // the 
