@@ -201,5 +201,9 @@ bool TMATSData::ValidatePCMDataObject(const Ch10PCMTMATSData& pcmtmatsdata)
         pcmtmatsdata.min_frame_sync_pattern_len_)
         return false;
 
+    // Validate count of minor frames per major frame
+    if(pcmtmatsdata.min_frames_in_maj_frame_ > 256)
+        return false;
+
     return true;
 }

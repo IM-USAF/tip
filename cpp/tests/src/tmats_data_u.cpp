@@ -422,6 +422,7 @@ TEST(TMATSDataTest, ValidatePCMDataObjectTrue)
     d.words_in_min_frame_ = 523;  // not > 1024
     d.min_frame_sync_pattern_len_ = 18;  // 15 < x < 34
     d.min_frame_sync_pattern_bitdef_ = "100110100111011101";  // matches
+    d.min_frames_in_maj_frame_ = 256;  // not > 257
     EXPECT_TRUE(td.ValidatePCMDataObject(d));
 
     d.min_frame_sync_pattern_bitdef_ = "1x0110100111011101";
@@ -465,6 +466,17 @@ TEST(TMATSDataTest, ValidatePCMDataObjectMinorFrameSyncPatternFalse)
 
     d.min_frame_sync_pattern_len_ = 20;  // 15 < x < 34
     d.min_frame_sync_pattern_bitdef_ = "1001101001110111010101";  // extra bits
+    EXPECT_FALSE(td.ValidatePCMDataObject(d));
+
+}
+
+TEST(TMATSDataTest, ValidatePCMDataObjectMinorFramesPerMajorFrameFalse)
+{
+    TMATSData td;
+    Ch10PCMTMATSData d;
+    d.min_frame_sync_pattern_len_ = 16;  // not 15 < x < 34
+    d.min_frame_sync_pattern_bitdef_ = "1001101001110111";  // matches
+    d.min_frames_in_maj_frame_ = 257;  // > 256
     EXPECT_FALSE(td.ValidatePCMDataObject(d));
 
 }

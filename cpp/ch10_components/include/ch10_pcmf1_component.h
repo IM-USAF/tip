@@ -34,6 +34,12 @@ class Ch10PCMF1Component : public Ch10PacketComponent
 
     Ch10Time ch10_time_;
 
+    //////////////////////////////////////////////////////////
+    // Calculated values
+    //////////////////////////////////////////////////////////
+    int majframe_len_bits_;
+
+
    public:
     const uint64_t& abs_time;
     const Ch10PacketElement<PCMF1CSDWFmt>& pcmf1_csdw_elem;
@@ -50,7 +56,8 @@ class Ch10PCMF1Component : public Ch10PacketComponent
         abs_time_(0),
         abs_time(abs_time_),
         ch10_time_(),
-        ipts_time_(0)
+        ipts_time_(0),
+        majframe_len_bits_(-1)
     { }
 
     Ch10Status Parse(const uint8_t*& data) override;

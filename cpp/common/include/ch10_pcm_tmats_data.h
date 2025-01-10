@@ -88,6 +88,19 @@ class Ch10PCMTMATSData
         {}
         Ch10PCMTMATSData& operator=(const Ch10PCMTMATSData&);
         bool operator==(const Ch10PCMTMATSData&) const;
+
+        /*
+        Calculate major frame length using two methods and compare
+        results. 
+
+        Args:
+            majframe_len    --> major frame length variable to be populated
+
+        Return:
+            True if major frame length calculated values agree. False
+            otherwise.  
+        */
+        bool CalculateMajorFrameLength(int& majframe_len);
 };
 
 #endif  // CH10_PCM_TMATS_DATA_H_

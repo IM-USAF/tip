@@ -71,3 +71,17 @@ bool Ch10PCMTMATSData::operator==(const Ch10PCMTMATSData& input) const
         this->min_frame_sync_pattern_len_ == input.min_frame_sync_pattern_len_ &&
         this->min_frame_sync_pattern_bitdef_ == input.min_frame_sync_pattern_bitdef_);
 }
+
+bool Ch10PCMTMATSData::CalculateMajorFrameLength(int& majframe_len)
+{
+    majframe_len = -1;
+    int calc_majframelen = bits_in_min_frame_ * min_frames_in_maj_frame_;
+    int calc_majframelen_bits = ((words_in_min_frame_ - 1) * common_word_length_
+        + min_frame_sync_pattern_len_) * min_frames_in_maj_frame_;
+    if(calc_majframelen == calc_majframelen_bits)
+    {
+        majframe_len = calc_majframelen;
+        return true;
+    }
+    return false;
+}
