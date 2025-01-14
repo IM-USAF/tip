@@ -41,6 +41,7 @@ add_executable(tests
     src/ch10_packet_header_component_u.cpp
     src/ch10_packet_u.cpp
     src/ch10_pcm_tmats_data_u.cpp
+    src/ch10_pcmf1_component_u.cpp
     src/ch10_tdp_component_u.cpp
     src/ch10_time_u.cpp
     src/ch10_tmats_component_u.cpp

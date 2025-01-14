@@ -18,7 +18,7 @@ Ch10Status Ch10PCMF1Component::Parse(const uint8_t*& data)
     // Sanity check
     int first = ctx_->pcm_tmats_data_map.begin()->first;
     Ch10PCMTMATSData pcmdata = ctx_->pcm_tmats_data_map.at(first);
-    SPDLOG_INFO("Ch10PCMF1Component::Parse: Using TMATS index {:d} PCM "
+    SPDLOG_TRACE("Ch10PCMF1Component::Parse: Using TMATS index {:d} PCM "
         "data.", first);
     if(!pcmdata.CalculateMajorFrameLength(majframe_len_bits_))
     {
@@ -51,6 +51,19 @@ Ch10Status Ch10PCMF1Component::Parse(const uint8_t*& data)
     //         // alignment
     //         break;
     // }
+
+    // Sanity checks on parsed IPH data.
+    if(!CheckFrameIndicator((*pcmf1_csdw_elem_.element)->mode_throughput, 
+        (*pcmf1_csdw_elem_.element)->MI, (*pcmf1_csdw_elem_.element)->MA))
+    {
+        SPDLOG_ERROR("Ch10PCMF1Component::Parse: CheckFrameIndicator: "
+            "throughput mode = {:d}, MI = {:d}, MA = {:d}", 
+            (*pcmf1_csdw_elem_.element)->mode_throughput, 
+            (*pcmf1_csdw_elem_.element)->MI,
+            (*pcmf1_csdw_elem_.element)->MA);
+        return Ch10Status::PCMF1_ERROR;
+    }
+
     if((*pcmf1_csdw_elem_.element)->mode_throughput)
     {
         SPDLOG_WARN("Ch10PCMF1Component::Parse: Throughput mode not handled!");
@@ -73,7 +86,10 @@ Ch10Status Ch10PCMF1Component::Parse(const uint8_t*& data)
         return Ch10Status::OK;
     }
 
-    // Determine count of minor frames
+    // Determine count of minor frames and effective minor frame size, 
+    // given word alignment implications. Not applicable in throughput 
+    // mode. (need bits_in_min_frame, size of packet body, IPH bit, and
+    // alignment mode 
     return Ch10Status::OK;
 }
 
@@ -86,4 +102,29 @@ Ch10Status Ch10PCMF1Component::ParseFrames(const uint8_t*& data)
 
     }
     return Ch10Status::OK;
+}
+
+bool Ch10PCMF1Component::CheckFrameIndicator(const uint32_t& throughput, const uint32_t& MI, 
+        const uint32_t& MA)
+{
+    if (throughput == 1)
+        return true;
+    else if(MI == 1 && MA == 1)
+        return false;
+    
+    return true;
+}
+
+bool Ch10PCMF1Component::CalculateMinorFrameCount(
+    const uint32_t& pkt_data_sz, const Ch10PCMTMATSData& tmats,
+    const PCMF1CSDWFmt* hdr, 
+    uint32_t& minor_frame_count, uint32_t& minor_frame_size)
+{
+    if(hdr->mode_throughput)
+    {
+        SPDLOG_ERROR("Ch10PCMF1Component::CalculateMinorFrameCount: "
+            "throughput mode not valid.");
+        return false;
+    }
+   return true; 
 }

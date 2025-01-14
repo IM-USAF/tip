@@ -86,6 +86,54 @@ class Ch10PCMF1Component : public Ch10PacketComponent
     //                         const PCMF1DataHeaderCommWordFmt* data_header);
 
     // uint16_t GetWordCountFromDataHeader(const PCMF1DataHeaderCommWordFmt* data_header);
+
+    /*
+    Sanity check on frame indicators. Both minor frame indicator (MI)
+    and major frame indicator (MA) cannot simultaneously indicate 
+    true = 1. Frame indicators are irrelevant for throughput mode. 
+
+    Args:
+        througphput --> 1 = throughput mode enabled 
+        MI          --> 1 = first word in the packet is the beginning
+                            of a minor frame
+        MA          --> 1 = first word in the packet is the beginning
+                            of a major frame
+
+    Return:
+        True if no conflicting configuration. False otherwise. 
+    */
+    bool CheckFrameIndicator(const uint32_t& throughput, const uint32_t& MI, 
+        const uint32_t& MA);
+
+    /*
+    Determine count of minor frames and effective minor frame size, 
+    given word alignment implications. Not applicable in throughput 
+    mode. Note that this function should not be called for throughput
+    mode; it is irrelevant (verify this understanding!).
+
+    Args:
+        pkt_data_sz         --> PCM F1 packet body size, in bytes
+        tmats               --> Ch10PCMTMATSData object
+        hdr                 --> PCMF1CSDWFmt object
+        minor_frame_count     --> Count of minor frames in the packet,
+                                to be assigned
+        minor_frame_size      --> Aligned minor frame size in bytes, 
+                                to be assigned
+
+    Return:
+        False if an error occurs, otherwise true.
+    */
+    bool CalculateMinorFrameCount(const uint32_t& pkt_data_sz,  
+        const Ch10PCMTMATSData& tmats, const PCMF1CSDWFmt* hdr, 
+        uint32_t& minor_frame_count, uint32_t& minor_frame_size);
+
+
+    /*
+    Handle lock status of minor or major frames. There is no prescription
+    for handling data when lock is not active. Deal with IPDH lock status
+    by skipping the current Ch10 PCMF1 packet given a certain combination
+    of status or simply indicate with warning messages.  
+    */
 };
 
 #endif
