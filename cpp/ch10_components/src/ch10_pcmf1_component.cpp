@@ -128,3 +128,34 @@ bool Ch10PCMF1Component::CalculateMinorFrameCount(
     }
    return true; 
 }
+
+
+int Ch10PCMF1Component::GetPacketMinFrameSyncPatternBitCount(const PCMF1CSDWFmt* hdr, 
+    const int& sync_pattern_len_bits)
+{
+    if(hdr->mode_unpacked == 1)
+    {
+        if(sync_pattern_len_bits < 17)
+            return 16;
+        else if(sync_pattern_len_bits < 33)
+            return 32;
+        else
+        {
+            if(hdr->mode_align == 0)
+            {
+                int word_count = (sync_pattern_len_bits + 15)/16;
+                return 16*word_count;
+            }
+            else
+            {
+                int word_count = (sync_pattern_len_bits + 31)/32;
+                return 32*word_count;
+            }
+        }
+    }
+    else if(hdr->mode_packed == 1)
+        return sync_pattern_len_bits;
+    // not relevant for throughput mode
+    else
+        return -1;
+}

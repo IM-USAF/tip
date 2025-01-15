@@ -129,6 +129,22 @@ class Ch10PCMF1Component : public Ch10PacketComponent
 
 
     /*
+    Get the count of bytes required to express the sync pattern, 
+    based on sync pattern length. Several variations of expression
+    exist. Note that currently, the sync pattern lenth has been 
+    tested for validity in tmats_data.cpp.
+
+    Args:
+        hdr                     --> PCMF1CSDWFmt object
+        sync_pattern_len_bits   --> Length of sync pattern in bits
+                                    as configured in TMATS
+    Return:
+        Count of bytes to be read in order to interpret sync pattern.
+    */
+    int GetPacketMinFrameSyncPatternBitCount(const PCMF1CSDWFmt* hdr, 
+        const int& sync_pattern_len_bits);
+
+    /*
     Handle lock status of minor or major frames. There is no prescription
     for handling data when lock is not active. Deal with IPDH lock status
     by skipping the current Ch10 PCMF1 packet given a certain combination
