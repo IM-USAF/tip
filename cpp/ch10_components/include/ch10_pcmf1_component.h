@@ -131,8 +131,11 @@ class Ch10PCMF1Component : public Ch10PacketComponent
     /*
     Get the count of bytes required to express the sync pattern, 
     based on sync pattern length. Several variations of expression
-    exist. Note that currently, the sync pattern lenth has been 
-    tested for validity in tmats_data.cpp.
+    exist. Note that the sync pattern lenth has been 
+    tested for validity in tmats_data.cpp so it is unnecessary here.
+
+    Note: Choose to return bits here and not bytes or words because
+    there may not be an integer count of 16-bit words in packed mode.
 
     Args:
         hdr                     --> PCMF1CSDWFmt object
@@ -141,8 +144,25 @@ class Ch10PCMF1Component : public Ch10PacketComponent
     Return:
         Count of bytes to be read in order to interpret sync pattern.
     */
-    int GetPacketMinFrameSyncPatternBitCount(const PCMF1CSDWFmt* hdr, 
+    virtual int GetPacketMinFrameSyncPatternBitCount(const PCMF1CSDWFmt* hdr, 
         const int& sync_pattern_len_bits);
+
+    /*
+    Get the count of bits in a minor frame which comprise all of the 
+    data words, plus any pad words, and the sync pattern.
+
+    Args:
+        tmats               --> Ch10PCMTMATSData object
+        hdr                 --> PCMF1CSDWFmt object
+        pkt_sync_pattern_bits --> Count of bits necessary which comprise
+                                  the sync pattern, including any pad bits.
+                                  This value is the return value of 
+                                  GetPacketMinFrameSyncPatternBitCount.
+    Return:
+        Count of bits in minor frame
+    */
+    int GetPacketMinFrameBitCount(const Ch10PCMTMATSData& tmats,
+        const PCMF1CSDWFmt* hdr, const int& pkt_sync_pattern_bits);
 
     /*
     Handle lock status of minor or major frames. There is no prescription

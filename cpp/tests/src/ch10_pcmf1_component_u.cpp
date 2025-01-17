@@ -1,6 +1,10 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "ch10_pcmf1_component.h"
+#include "ch10_pcmf1_component_mock.h"
+
+using ::testing::NiceMock;
+using ::testing::Return;
 
 class Ch10PCMF1ComponentTest : public ::testing::Test
 {
@@ -8,10 +12,11 @@ class Ch10PCMF1ComponentTest : public ::testing::Test
     Ch10PCMF1Component comp_;
     const uint8_t* data_ptr_;
     Ch10Status status_;
+    NiceMock<MockCh10PCMF1Component> mock_pcmf1_;
     Ch10Context ctx_;
 
     Ch10PCMF1ComponentTest() : data_ptr_(nullptr), status_(Ch10Status::NONE), 
-        ctx_(0), comp_(&ctx_) 
+        ctx_(0), comp_(&ctx_), mock_pcmf1_(&ctx_) 
     {}
 };
 
@@ -108,6 +113,163 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameSyncPatternBitCountPacked)
 
     pattern_len = 79;    
     EXPECT_EQ(pattern_len, comp_.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
+}
+
+// Note: May need to test various common word lengths. Not sure how to 
+// handle if common word length is, for example, 24 bits. How to pad, etc?
+// Need additional test for situation in which different word sizes are used.
+TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameBitCountAlign16Unpacked)
+{
+    // This test only handles the case of common word length < 17 bits
+    // with no non-common words lengths.
+    Ch10PCMTMATSData tmats{};
+    tmats.common_word_length_ = 16;
+    tmats.words_in_min_frame_ = 10;
+    PCMF1CSDWFmt hdr{};
+    hdr.mode_unpacked = 1;
+    hdr.mode_packed = 0;
+    hdr.mode_throughput = 0;
+    hdr.mode_align = 0;  // 16-bit
+    int pkt_sync_pattern_bits = 16;
+
+    // Subtract the sync pattern word, which counts as one word regardless
+    // of length
+    int expected = (tmats.words_in_min_frame_ - 1)*16
+        + pkt_sync_pattern_bits;      
+    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+        pkt_sync_pattern_bits));
+
+    pkt_sync_pattern_bits = 32;
+    expected = (tmats.words_in_min_frame_ - 1)*16
+        + pkt_sync_pattern_bits;      
+    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr,
+        pkt_sync_pattern_bits));
+
+}
+
+TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameBitCountAlign32Unpacked)
+{
+    // This test only handles the case of common word length < 17 bits
+    // with no non-common words lengths.
+    Ch10PCMTMATSData tmats{};
+    tmats.common_word_length_ = 16;
+    tmats.words_in_min_frame_ = 10;
+    PCMF1CSDWFmt hdr{};
+    hdr.mode_unpacked = 1;
+    hdr.mode_packed = 0;
+    hdr.mode_throughput = 0;
+    hdr.mode_align = 1;  // 32-bit
+    int pkt_sync_pattern_bits = 16;
+
+    int expected = (tmats.words_in_min_frame_ - 1)*16
+        + pkt_sync_pattern_bits;      
+    if(expected % 32 != 0)
+        expected += 16;
+    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+        pkt_sync_pattern_bits));
+
+    pkt_sync_pattern_bits = 32;
+    expected = (tmats.words_in_min_frame_ - 1)*16
+        + pkt_sync_pattern_bits;      
+    if(expected % 32 != 0)
+        expected += 16;
+    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+        pkt_sync_pattern_bits));
+
+    tmats.words_in_min_frame_ = 11;
+    pkt_sync_pattern_bits = 16;
+    expected = (tmats.words_in_min_frame_ - 1)*16
+        + pkt_sync_pattern_bits;      
+    if(expected % 32 != 0)
+        expected += 16;
+    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+        pkt_sync_pattern_bits));
+
+    tmats.words_in_min_frame_ = 11;
+    pkt_sync_pattern_bits = 32;
+    expected = (tmats.words_in_min_frame_ - 1)*16
+        + pkt_sync_pattern_bits;      
+    if(expected % 32 != 0)
+        expected += 16;
+    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+        pkt_sync_pattern_bits));
+}
+
+TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameBitCountAlign16Packed)
+{
+    // This test does not handle the case of words which do not have
+    // the common word length.
+    Ch10PCMTMATSData tmats{};
+    tmats.common_word_length_ = 14;
+    tmats.words_in_min_frame_ = 10;
+    tmats.min_frame_sync_pattern_len_ = 16;
+    PCMF1CSDWFmt hdr{};
+    hdr.mode_unpacked = 0;
+    hdr.mode_packed = 1;
+    hdr.mode_throughput = 0;
+    hdr.mode_align = 0;  // 16-bit
+    int pkt_sync_pattern_bits = 0;
+
+    int expected = (tmats.words_in_min_frame_ - 1)*tmats.common_word_length_
+        + tmats.min_frame_sync_pattern_len_;      
+    if(expected % 16 != 0)
+    {
+        int pad_bits = 16 - (expected % 16);
+        expected += pad_bits;
+    }
+    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+        pkt_sync_pattern_bits));
+
+    tmats.min_frame_sync_pattern_len_ = 18;
+    expected = (tmats.words_in_min_frame_ - 1)*tmats.common_word_length_
+        + tmats.min_frame_sync_pattern_len_;      
+    if(expected % 16 != 0)
+    {
+        int pad_bits = 16 - (expected % 16);
+        expected += pad_bits;
+    }
+    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+        pkt_sync_pattern_bits));
+}
+
+TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameBitCountAlign32Packed)
+{
+    // This test does not handle the case of words which do not have
+    // the common word length.
+    Ch10PCMTMATSData tmats{};
+    tmats.common_word_length_ = 14;
+    tmats.words_in_min_frame_ = 10;
+    tmats.min_frame_sync_pattern_len_ = 16;
+    PCMF1CSDWFmt hdr{};
+    hdr.mode_unpacked = 0;
+    hdr.mode_packed = 1;
+    hdr.mode_throughput = 0;
+    hdr.mode_align = 1;  // 32-bit
+    int pkt_sync_pattern_bits = 0;
+
+    // 142
+    int expected = (tmats.words_in_min_frame_ - 1)*tmats.common_word_length_
+        + tmats.min_frame_sync_pattern_len_;      
+    // 14
+    if(expected % 32 != 0)
+    {
+        int pad_bits = 32 - (expected % 32);
+        expected += pad_bits;
+    }
+    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+        pkt_sync_pattern_bits));
+
+    tmats.words_in_min_frame_ = 9;
+    // 128
+    expected = (tmats.words_in_min_frame_ - 1)*tmats.common_word_length_
+        + tmats.min_frame_sync_pattern_len_;      
+    if(expected % 32 != 0)
+    {
+        int pad_bits = 32 - (expected % 32);
+        expected += pad_bits;
+    }
+    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+        pkt_sync_pattern_bits));
 }
 
 TEST_F(Ch10PCMF1ComponentTest, CalculateMinorFrameCountNoThroughput)

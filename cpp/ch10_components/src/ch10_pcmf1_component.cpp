@@ -159,3 +159,52 @@ int Ch10PCMF1Component::GetPacketMinFrameSyncPatternBitCount(const PCMF1CSDWFmt*
     else
         return -1;
 }
+
+int Ch10PCMF1Component::GetPacketMinFrameBitCount(const Ch10PCMTMATSData& tmats,
+    const PCMF1CSDWFmt* hdr, const int& pkt_sync_pattern_bits)
+{
+    if(hdr->mode_unpacked)
+    {
+        // Does not handle common word size > 16 or any non-common 
+        // word sizes.
+        if(hdr->mode_align == 0)
+        {
+            return (tmats.words_in_min_frame_ - 1)*16
+                + pkt_sync_pattern_bits;
+        }
+        else
+        {
+            int count = (tmats.words_in_min_frame_ - 1) * 16 + pkt_sync_pattern_bits;
+            if(count % 32 != 0)
+                count += 16;
+            return count;
+        }
+    }
+    else if(hdr->mode_packed)
+    {
+        // Does not handle any non-common word sizes
+        if(hdr->mode_align == 0)
+        {
+            int count = (tmats.words_in_min_frame_ - 1) * tmats.common_word_length_
+                + tmats.min_frame_sync_pattern_len_;
+            if(count % 16 != 0)
+            {
+                int pad = 16 - (count % 16);
+                return count + pad;
+            }
+            return count;
+        }
+        else
+        {
+            int count = (tmats.words_in_min_frame_ - 1) * tmats.common_word_length_
+                + tmats.min_frame_sync_pattern_len_;
+            if(count % 32 != 0)
+            {
+                int pad = 32 - (count % 32);
+                return count + pad;
+            }
+            return count;
+        }
+    }
+    return -1;
+}

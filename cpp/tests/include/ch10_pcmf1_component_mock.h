@@ -10,6 +10,8 @@ class MockCh10PCMF1Component: public Ch10PCMF1Component
    public:
     MockCh10PCMF1Component(Ch10Context* const ch10ctx) : Ch10PCMF1Component(ch10ctx) {}
     MOCK_METHOD1(Parse, Ch10Status(const uint8_t*& data));
+    MOCK_METHOD2(GetPacketMinFrameSyncPatternBitCount, int(
+        const PCMF1CSDWFmt* hdr, const int& sync_pattern_len_bits));
 };
 
 
