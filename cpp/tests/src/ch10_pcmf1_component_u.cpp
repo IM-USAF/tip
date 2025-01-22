@@ -115,6 +115,17 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameSyncPatternBitCountPacked)
     EXPECT_EQ(pattern_len, comp_.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
 }
 
+TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameSyncPatternBitCountThroughput)
+{
+    int pattern_len = 15;
+    PCMF1CSDWFmt hdr{};
+    hdr.mode_align = 0;
+    hdr.mode_packed = 0;
+    hdr.mode_unpacked = 0;
+    hdr.mode_throughput = 1;
+    EXPECT_EQ(pattern_len, comp_.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
+}
+
 // Note: May need to test various common word lengths. Not sure how to 
 // handle if common word length is, for example, 24 bits. How to pad, etc?
 // Need additional test for situation in which different word sizes are used.
@@ -232,6 +243,30 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameBitCountAlign16Packed)
         pkt_sync_pattern_bits));
 }
 
+TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameBitCountThroughput)
+{
+    Ch10PCMTMATSData tmats{};
+    tmats.common_word_length_ = 14;
+    tmats.words_in_min_frame_ = 10;
+    tmats.bits_in_min_frame_ = 150;
+    tmats.min_frame_sync_pattern_len_ = 24;
+    PCMF1CSDWFmt hdr{};
+    hdr.mode_unpacked = 0;
+    hdr.mode_packed = 0;
+    hdr.mode_throughput = 1;
+    hdr.mode_align = 1;  // 32-bit
+    int pkt_sync_pattern_bits = 38;  // not relevant for calculation
+
+    EXPECT_EQ(tmats.bits_in_min_frame_, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+        pkt_sync_pattern_bits));
+
+    
+    hdr.mode_align = 0;
+    EXPECT_EQ(tmats.bits_in_min_frame_, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+        pkt_sync_pattern_bits));
+}
+
+
 TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameBitCountAlign32Packed)
 {
     // This test does not handle the case of words which do not have
@@ -285,23 +320,33 @@ TEST_F(Ch10PCMF1ComponentTest, CalculateMinorFrameCountNoThroughput)
         &hdr, minor_frame_count, minor_frame_size));
 }
 
-// MFSPlt16 = minor frame sync pattern less than 16 bits in length
-// TEST_F(Ch10PCMF1ComponentTest, CalculateMinorFrameCount16UnpackedNoIPHMFSPlt16)
-// {
-//     uint32_t pkt_data_sz = 12456;
-//     PCMF1CSDWFmt hdr{};
-//     hdr.mode_packed = 0;
-//     hdr.mode_unpacked = 1;
-//     hdr.mode_throughput = 0;
-//     hdr.IPH = 0;
-//     hdr.mode_align = 16;
+TEST_F(Ch10PCMF1ComponentTest, CalculateMinorFrameCountNoIPH)
+{
+    uint32_t pkt_data_sz = 12456;
+    PCMF1CSDWFmt hdr{};
+    hdr.mode_packed = 0;
+    hdr.mode_unpacked = 1;
+    hdr.mode_throughput = 0;
+    hdr.IPH = 0;
 
-//     Ch10PCMTMATSData tmats;
-//     tmats.bits_in_min_frame_ = 377;
-//     tmats.min_frame_sync_pattern_len_ = 15;
+    Ch10PCMTMATSData tmats;
+    // not relevant for mocked methods, but required as input
+    int input_sync_pattern_len_bits = 24;  
+    int output_sync_pattern_len_bits = 32;
+    int output_min_frame_bit_count = 438;
+    int input_min_frame_count = 12;
+    uint32_t input_pkt_data_sz = output_min_frame_bit_count * input_min_frame_count;
+    uint32_t temp_minor_frame_count = 0;
+    uint32_t temp_minor_frame_size = 0;
 
-//     uint32_t minor_frame_count = 0;
-//     uint32_t minor_frame_size = 0;
-//     EXPECT_FALSE(comp_.CalculateMinorFrameCount(pkt_data_sz, tmats, 
-//         &hdr, minor_frame_count, minor_frame_size));
-// }
+    EXPECT_CALL(mock_pcmf1_, GetPacketMinFrameSyncPatternBitCount(&hdr, 
+        input_sync_pattern_len_bits)).WillOnce(
+            Return(output_sync_pattern_len_bits));
+    EXPECT_CALL(mock_pcmf1_, GetPacketMinFrameBitCount(tmats, &hdr, 
+        output_sync_pattern_len_bits)).WillOnce(Return(output_min_frame_bit_count));
+
+    EXPECT_TRUE(mock_pcmf1_.CalculateMinorFrameCount(input_pkt_data_sz, 
+        tmats, &hdr, temp_minor_frame_count, temp_minor_frame_size));
+    EXPECT_EQ(temp_minor_frame_count, input_min_frame_count);
+    EXPECT_EQ(temp_minor_frame_size, output_min_frame_bit_count);
+}

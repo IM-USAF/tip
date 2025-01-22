@@ -149,7 +149,8 @@ class Ch10PCMF1Component : public Ch10PacketComponent
 
     /*
     Get the count of bits in a minor frame which comprise all of the 
-    data words, plus any pad words, and the sync pattern.
+    data words, plus any pad words, and the sync pattern. Does not
+    include IPH, if present.
 
     Args:
         tmats               --> Ch10PCMTMATSData object
@@ -161,7 +162,7 @@ class Ch10PCMF1Component : public Ch10PacketComponent
     Return:
         Count of bits in minor frame
     */
-    int GetPacketMinFrameBitCount(const Ch10PCMTMATSData& tmats,
+    virtual int GetPacketMinFrameBitCount(const Ch10PCMTMATSData& tmats,
         const PCMF1CSDWFmt* hdr, const int& pkt_sync_pattern_bits);
 
     /*

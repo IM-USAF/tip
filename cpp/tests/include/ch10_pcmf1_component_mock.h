@@ -12,6 +12,8 @@ class MockCh10PCMF1Component: public Ch10PCMF1Component
     MOCK_METHOD1(Parse, Ch10Status(const uint8_t*& data));
     MOCK_METHOD2(GetPacketMinFrameSyncPatternBitCount, int(
         const PCMF1CSDWFmt* hdr, const int& sync_pattern_len_bits));
+    MOCK_METHOD3(GetPacketMinFrameBitCount, int(const Ch10PCMTMATSData& tmats,
+        const PCMF1CSDWFmt* hdr, const int& pkt_sync_pattern_bits));
 };
 
 

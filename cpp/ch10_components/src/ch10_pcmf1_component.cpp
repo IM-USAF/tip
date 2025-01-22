@@ -155,7 +155,8 @@ int Ch10PCMF1Component::GetPacketMinFrameSyncPatternBitCount(const PCMF1CSDWFmt*
     }
     else if(hdr->mode_packed == 1)
         return sync_pattern_len_bits;
-    // not relevant for throughput mode
+    else if(hdr->mode_throughput == 1)
+        return sync_pattern_len_bits;
     else
         return -1;
 }
@@ -206,5 +207,21 @@ int Ch10PCMF1Component::GetPacketMinFrameBitCount(const Ch10PCMTMATSData& tmats,
             return count;
         }
     }
+    else if(hdr->mode_throughput)
+    {
+        int count = (tmats.words_in_min_frame_ - 1)* tmats.common_word_length_
+            + tmats.min_frame_sync_pattern_len_;
+        if (count != tmats.bits_in_min_frame_)
+        {
+            SPDLOG_ERROR("Ch10PCMF1Component::GetPacketMinFrameBitCount: "
+                "throughput mode calculated minor frame length ({:d}) does not "
+                "equal value found in TMATS ({:d}). Note: unique word sizes is "
+                "not currently handled. Calculation only uses single common word "
+                "length.", count, tmats.bits_in_min_frame_);
+            return -1;
+        }
+        return count;
+    }
+
     return -1;
 }
