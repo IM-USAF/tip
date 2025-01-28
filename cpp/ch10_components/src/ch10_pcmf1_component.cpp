@@ -1,5 +1,7 @@
 #include "ch10_pcmf1_component.h"
 
+const int Ch10PCMF1Component::IPTS_len_bytes_ = 8;
+
 Ch10Status Ch10PCMF1Component::Parse(const uint8_t*& data)
 {
     if(ctx_->pcm_tmats_data_map.size() == 0)
@@ -93,14 +95,18 @@ Ch10Status Ch10PCMF1Component::Parse(const uint8_t*& data)
     return Ch10Status::OK;
 }
 
-Ch10Status Ch10PCMF1Component::ParseFrames(const uint8_t*& data)
+Ch10Status Ch10PCMF1Component::ParseFrames(const uint8_t*& data, 
+    const Ch10PCMTMATSData& pcmdata)
 {
-    // If IPH = 0 ==> no IPH. If IPH == 1, IPH (IPTS and IPDH) before
-    // each minor frame.
-    if((*pcmf1_csdw_elem_.element)->IPH)
-    {
+    // Note: When throughput mode needs to be handled do not use 
+    // this function. The presence of frames at all contradicts with
+    // throughput mode. 
+    uint32_t minor_frame_count = 0;
+    uint32_t minor_frame_size_bytes = 0;
+    if(!CalculateMinorFrameCount(ctx_->data_size, pcmdata, 
+        *pcmf1_csdw_elem_.element, minor_frame_count, minor_frame_size_bytes))
+        Ch10Status::PCMF1_ERROR;    
 
-    }
     return Ch10Status::OK;
 }
 
@@ -126,7 +132,42 @@ bool Ch10PCMF1Component::CalculateMinorFrameCount(
             "throughput mode not valid.");
         return false;
     }
-   return true; 
+
+    if(hdr->IPH == 0)
+    {
+        // IPH is required for both non-throughput modes: packed and unpacked.
+        SPDLOG_ERROR("Ch10PCMF1Component::CalculateMinorFrameCount: "
+            "IPH is not enabled and is required for both packed and "
+            "unpacked modes.");
+        return false;
+    }
+
+    // The length of the sync pattern as placed into the packet.
+    int pkt_sync_pattern_len_bits = GetPacketMinFrameSyncPatternBitCount(
+        hdr, tmats.min_frame_sync_pattern_len_);
+
+    // The length of the minor frame as placed into the packet, i.e., 
+    // with all of the padding, etc., in bytes.
+    minor_frame_size = GetPacketMinFrameBitCount(tmats, hdr, 
+        pkt_sync_pattern_len_bits) / 8;
+
+    if(hdr->mode_align == 0)
+        IPDH_len_bytes_ = 2;
+    else
+        IPDH_len_bytes_ = 4;
+
+    minor_frame_count = pkt_data_sz / 
+        (minor_frame_size + IPDH_len_bytes_ + IPTS_len_bytes_);
+    if (pkt_data_sz % (minor_frame_size + IPDH_len_bytes_ + IPTS_len_bytes_) != 0)
+    {
+        SPDLOG_ERROR("Ch10PCMF1Component::CalculateMinorFrameCount: "
+            "Ch10 packet data size in bytes ({:d}) divided by minor frame "
+            "size in bytes ({:d}) is not an integer value.", pkt_data_sz, 
+            minor_frame_size);
+        return false;
+    }
+
+    return true; 
 }
 
 

@@ -34,6 +34,9 @@ class Ch10PCMF1Component : public Ch10PacketComponent
 
     Ch10Time ch10_time_;
 
+    // Value of IPDH
+    int IPDH_len_bytes_;
+
     //////////////////////////////////////////////////////////
     // Calculated values
     //////////////////////////////////////////////////////////
@@ -42,6 +45,7 @@ class Ch10PCMF1Component : public Ch10PacketComponent
 
    public:
     const uint64_t& abs_time;
+    static const int IPTS_len_bytes_;
     const Ch10PacketElement<PCMF1CSDWFmt>& pcmf1_csdw_elem;
     const Ch10PacketElement<PCMF1IPDH16Fmt>& pcmf1_data_hdr16_elem;
     const Ch10PacketElement<PCMF1IPDH32Fmt>& pcmf1_data_hdr32_elem;
@@ -57,7 +61,8 @@ class Ch10PCMF1Component : public Ch10PacketComponent
         abs_time(abs_time_),
         ch10_time_(),
         ipts_time_(0),
-        majframe_len_bits_(-1)
+        majframe_len_bits_(-1),
+        IPDH_len_bytes_(0)
     { }
 
     Ch10Status Parse(const uint8_t*& data) override;
@@ -76,11 +81,13 @@ class Ch10PCMF1Component : public Ch10PacketComponent
 						in the packet
 		data		--> pointer to the first byte in the series of
 						messages
+        pcmdata     --> Ch10PCMTMATSData object containing PCM configuration
+                        relevant to current PCM packet
 
 	Return:
 		Ch10Status::OK if no problems, otherwise a different Ch10Status code.
 	*/
-    Ch10Status ParseFrames(const uint8_t*& data);
+    Ch10Status ParseFrames(const uint8_t*& data, const Ch10PCMTMATSData& pcmdata);
 
     // Ch10Status ParsePayload(const uint8_t*& data,
     //                         const PCMF1DataHeaderCommWordFmt* data_header);
@@ -112,7 +119,7 @@ class Ch10PCMF1Component : public Ch10PacketComponent
     mode; it is irrelevant (verify this understanding!).
 
     Args:
-        pkt_data_sz         --> PCM F1 packet body size, in bytes
+        pkt_data_sz         --> PCM F1 packet data size, in bytes
         tmats               --> Ch10PCMTMATSData object
         hdr                 --> PCMF1CSDWFmt object
         minor_frame_count     --> Count of minor frames in the packet,
@@ -123,7 +130,7 @@ class Ch10PCMF1Component : public Ch10PacketComponent
     Return:
         False if an error occurs, otherwise true.
     */
-    bool CalculateMinorFrameCount(const uint32_t& pkt_data_sz,  
+    virtual bool CalculateMinorFrameCount(const uint32_t& pkt_data_sz,  
         const Ch10PCMTMATSData& tmats, const PCMF1CSDWFmt* hdr, 
         uint32_t& minor_frame_count, uint32_t& minor_frame_size);
 

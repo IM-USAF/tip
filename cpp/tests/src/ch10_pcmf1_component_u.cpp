@@ -332,10 +332,69 @@ TEST_F(Ch10PCMF1ComponentTest, CalculateMinorFrameCountNoIPH)
     Ch10PCMTMATSData tmats;
     // not relevant for mocked methods, but required as input
     int input_sync_pattern_len_bits = 24;  
+    tmats.min_frame_sync_pattern_len_ = input_sync_pattern_len_bits;
     int output_sync_pattern_len_bits = 32;
-    int output_min_frame_bit_count = 438;
+    int output_min_frame_bit_count = 432;
     int input_min_frame_count = 12;
-    uint32_t input_pkt_data_sz = output_min_frame_bit_count * input_min_frame_count;
+    uint32_t input_pkt_data_sz = (output_min_frame_bit_count/8) * input_min_frame_count;
+    uint32_t temp_minor_frame_count = 0;
+    uint32_t temp_minor_frame_size = 0;
+
+    EXPECT_FALSE(mock_pcmf1_.CalculateMinorFrameCount(input_pkt_data_sz, 
+        tmats, &hdr, temp_minor_frame_count, temp_minor_frame_size));
+}
+
+TEST_F(Ch10PCMF1ComponentTest, CalculateMinorFrameCountNonIntegerFrameCount)
+{
+    uint32_t pkt_data_sz = 12456;
+    PCMF1CSDWFmt hdr{};
+    hdr.mode_packed = 0;
+    hdr.mode_unpacked = 1;
+    hdr.mode_throughput = 0;
+    hdr.IPH = 1;
+    hdr.mode_align = 0;
+
+    Ch10PCMTMATSData tmats;
+    // not relevant for mocked methods, but required as input
+    int input_sync_pattern_len_bits = 24;  
+    tmats.min_frame_sync_pattern_len_ = input_sync_pattern_len_bits;
+    int output_sync_pattern_len_bits = 32;
+    int output_min_frame_bit_count = 432;
+    int input_min_frame_count = 12;
+    uint32_t input_pkt_data_sz = (output_min_frame_bit_count/8 + 10) * 
+        input_min_frame_count + 23; // 23 is not multiple of minor frame size
+    uint32_t temp_minor_frame_count = 0;
+    uint32_t temp_minor_frame_size = 0;
+
+    EXPECT_CALL(mock_pcmf1_, GetPacketMinFrameSyncPatternBitCount(&hdr, 
+        input_sync_pattern_len_bits)).WillOnce(
+            Return(output_sync_pattern_len_bits));
+    EXPECT_CALL(mock_pcmf1_, GetPacketMinFrameBitCount(tmats, &hdr, 
+        output_sync_pattern_len_bits)).WillOnce(Return(output_min_frame_bit_count));
+
+    EXPECT_FALSE(mock_pcmf1_.CalculateMinorFrameCount(input_pkt_data_sz, 
+        tmats, &hdr, temp_minor_frame_count, temp_minor_frame_size));
+}
+
+TEST_F(Ch10PCMF1ComponentTest, CalculateMinorFrameCount16BitMode)
+{
+    uint32_t pkt_data_sz = 12456;
+    PCMF1CSDWFmt hdr{};
+    hdr.mode_packed = 1;
+    hdr.mode_unpacked = 0;
+    hdr.mode_throughput = 0;
+    hdr.IPH = 1;
+    hdr.mode_align = 0;  // 16-bit 
+
+    Ch10PCMTMATSData tmats;
+    // not relevant for mocked methods, but required as input
+    int input_sync_pattern_len_bits = 24;  
+    tmats.min_frame_sync_pattern_len_ = input_sync_pattern_len_bits;
+    int output_sync_pattern_len_bits = 32;
+    int output_min_frame_bit_count = 432;
+    int input_min_frame_count = 12;
+    uint32_t input_pkt_data_sz = (output_min_frame_bit_count/8 + 10) * 
+        input_min_frame_count;
     uint32_t temp_minor_frame_count = 0;
     uint32_t temp_minor_frame_size = 0;
 
@@ -348,5 +407,39 @@ TEST_F(Ch10PCMF1ComponentTest, CalculateMinorFrameCountNoIPH)
     EXPECT_TRUE(mock_pcmf1_.CalculateMinorFrameCount(input_pkt_data_sz, 
         tmats, &hdr, temp_minor_frame_count, temp_minor_frame_size));
     EXPECT_EQ(temp_minor_frame_count, input_min_frame_count);
-    EXPECT_EQ(temp_minor_frame_size, output_min_frame_bit_count);
+    EXPECT_EQ(temp_minor_frame_size, output_min_frame_bit_count/8);
+}
+
+TEST_F(Ch10PCMF1ComponentTest, CalculateMinorFrameCount32BitMode)
+{
+    uint32_t pkt_data_sz = 12456;
+    PCMF1CSDWFmt hdr{};
+    hdr.mode_packed = 1;
+    hdr.mode_unpacked = 0;
+    hdr.mode_throughput = 0;
+    hdr.IPH = 1;
+    hdr.mode_align = 1;  // 32-bit 
+
+    Ch10PCMTMATSData tmats;
+    // not relevant for mocked methods, but required as input
+    int input_sync_pattern_len_bits = 24;  
+    tmats.min_frame_sync_pattern_len_ = input_sync_pattern_len_bits;
+    int output_sync_pattern_len_bits = 32;
+    int output_min_frame_bit_count = 432;
+    int input_min_frame_count = 12;
+    uint32_t input_pkt_data_sz = (output_min_frame_bit_count/8 + 12) * 
+        input_min_frame_count;
+    uint32_t temp_minor_frame_count = 0;
+    uint32_t temp_minor_frame_size = 0;
+
+    EXPECT_CALL(mock_pcmf1_, GetPacketMinFrameSyncPatternBitCount(&hdr, 
+        input_sync_pattern_len_bits)).WillOnce(
+            Return(output_sync_pattern_len_bits));
+    EXPECT_CALL(mock_pcmf1_, GetPacketMinFrameBitCount(tmats, &hdr, 
+        output_sync_pattern_len_bits)).WillOnce(Return(output_min_frame_bit_count));
+
+    EXPECT_TRUE(mock_pcmf1_.CalculateMinorFrameCount(input_pkt_data_sz, 
+        tmats, &hdr, temp_minor_frame_count, temp_minor_frame_size));
+    EXPECT_EQ(temp_minor_frame_count, input_min_frame_count);
+    EXPECT_EQ(temp_minor_frame_size, output_min_frame_bit_count/8);
 }
