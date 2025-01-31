@@ -1,10 +1,16 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "ch10_context_mock.h"
 #include "ch10_pcmf1_component.h"
 #include "ch10_pcmf1_component_mock.h"
 
 using ::testing::NiceMock;
 using ::testing::Return;
+using ::testing::ReturnRef;
+using ::testing::Property;
+using ::testing::Eq;
+using ::testing::_;
+using ::testing::Ref;
 
 class Ch10PCMF1ComponentTest : public ::testing::Test
 {
@@ -59,7 +65,8 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameSyncPatternBitCountUnpackedLT17)
     hdr.mode_packed = 0;
     hdr.mode_unpacked = 1;
     hdr.mode_throughput = 0;
-    EXPECT_EQ(16, comp_.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
+    Ch10PCMF1MinorFrame minframe;
+    EXPECT_EQ(16, minframe.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
 }
 
 // GT16 = greater than 16
@@ -71,7 +78,9 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameSyncPatternBitCountUnpackedGT16)
     hdr.mode_packed = 0;
     hdr.mode_unpacked = 1;
     hdr.mode_throughput = 0;
-    EXPECT_EQ(32, comp_.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
+    Ch10PCMF1MinorFrame minframe;
+
+    EXPECT_EQ(32, minframe.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
 }
 
 TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameSyncPatternBitCountAlign16UnpackedGT32)
@@ -82,14 +91,16 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameSyncPatternBitCountAlign16Unpack
     hdr.mode_packed = 0;
     hdr.mode_unpacked = 1;
     hdr.mode_throughput = 0;
+    Ch10PCMF1MinorFrame minframe;
+
     int expected_word_count = (pattern_len + 15)/16;
     EXPECT_EQ(expected_word_count*16, 
-        comp_.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
+        minframe.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
 
     hdr.mode_align = 1;
     expected_word_count = (pattern_len + 31)/32;
     EXPECT_EQ(expected_word_count*32, 
-        comp_.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
+        minframe.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
 }
 
 TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameSyncPatternBitCountPacked)
@@ -100,19 +111,21 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameSyncPatternBitCountPacked)
     hdr.mode_packed = 1;
     hdr.mode_unpacked = 0;
     hdr.mode_throughput = 0;
-    EXPECT_EQ(pattern_len, comp_.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
+    Ch10PCMF1MinorFrame minframe;
+
+    EXPECT_EQ(pattern_len, minframe.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
 
     pattern_len = 25;
-    EXPECT_EQ(pattern_len, comp_.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
+    EXPECT_EQ(pattern_len, minframe.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
 
     hdr.mode_align = 1;
-    EXPECT_EQ(pattern_len, comp_.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
+    EXPECT_EQ(pattern_len, minframe.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
 
     pattern_len = 7;    
-    EXPECT_EQ(pattern_len, comp_.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
+    EXPECT_EQ(pattern_len, minframe.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
 
     pattern_len = 79;    
-    EXPECT_EQ(pattern_len, comp_.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
+    EXPECT_EQ(pattern_len, minframe.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
 }
 
 TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameSyncPatternBitCountThroughput)
@@ -123,7 +136,8 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameSyncPatternBitCountThroughput)
     hdr.mode_packed = 0;
     hdr.mode_unpacked = 0;
     hdr.mode_throughput = 1;
-    EXPECT_EQ(pattern_len, comp_.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
+    Ch10PCMF1MinorFrame minframe;
+    EXPECT_EQ(pattern_len, minframe.GetPacketMinFrameSyncPatternBitCount(&hdr, pattern_len));
 }
 
 // Note: May need to test various common word lengths. Not sure how to 
@@ -142,18 +156,19 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameBitCountAlign16Unpacked)
     hdr.mode_throughput = 0;
     hdr.mode_align = 0;  // 16-bit
     int pkt_sync_pattern_bits = 16;
+    Ch10PCMF1MinorFrame minframe;
 
     // Subtract the sync pattern word, which counts as one word regardless
     // of length
     int expected = (tmats.words_in_min_frame_ - 1)*16
         + pkt_sync_pattern_bits;      
-    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+    EXPECT_EQ(expected, minframe.GetPacketMinFrameBitCount(tmats, &hdr, 
         pkt_sync_pattern_bits));
 
     pkt_sync_pattern_bits = 32;
     expected = (tmats.words_in_min_frame_ - 1)*16
         + pkt_sync_pattern_bits;      
-    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr,
+    EXPECT_EQ(expected, minframe.GetPacketMinFrameBitCount(tmats, &hdr,
         pkt_sync_pattern_bits));
 
 }
@@ -171,12 +186,13 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameBitCountAlign32Unpacked)
     hdr.mode_throughput = 0;
     hdr.mode_align = 1;  // 32-bit
     int pkt_sync_pattern_bits = 16;
+    Ch10PCMF1MinorFrame minframe;
 
     int expected = (tmats.words_in_min_frame_ - 1)*16
         + pkt_sync_pattern_bits;      
     if(expected % 32 != 0)
         expected += 16;
-    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+    EXPECT_EQ(expected, minframe.GetPacketMinFrameBitCount(tmats, &hdr, 
         pkt_sync_pattern_bits));
 
     pkt_sync_pattern_bits = 32;
@@ -184,7 +200,7 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameBitCountAlign32Unpacked)
         + pkt_sync_pattern_bits;      
     if(expected % 32 != 0)
         expected += 16;
-    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+    EXPECT_EQ(expected, minframe.GetPacketMinFrameBitCount(tmats, &hdr, 
         pkt_sync_pattern_bits));
 
     tmats.words_in_min_frame_ = 11;
@@ -193,7 +209,7 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameBitCountAlign32Unpacked)
         + pkt_sync_pattern_bits;      
     if(expected % 32 != 0)
         expected += 16;
-    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+    EXPECT_EQ(expected, minframe.GetPacketMinFrameBitCount(tmats, &hdr, 
         pkt_sync_pattern_bits));
 
     tmats.words_in_min_frame_ = 11;
@@ -202,7 +218,7 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameBitCountAlign32Unpacked)
         + pkt_sync_pattern_bits;      
     if(expected % 32 != 0)
         expected += 16;
-    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+    EXPECT_EQ(expected, minframe.GetPacketMinFrameBitCount(tmats, &hdr, 
         pkt_sync_pattern_bits));
 }
 
@@ -220,6 +236,7 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameBitCountAlign16Packed)
     hdr.mode_throughput = 0;
     hdr.mode_align = 0;  // 16-bit
     int pkt_sync_pattern_bits = 0;
+    Ch10PCMF1MinorFrame minframe;
 
     int expected = (tmats.words_in_min_frame_ - 1)*tmats.common_word_length_
         + tmats.min_frame_sync_pattern_len_;      
@@ -228,7 +245,7 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameBitCountAlign16Packed)
         int pad_bits = 16 - (expected % 16);
         expected += pad_bits;
     }
-    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+    EXPECT_EQ(expected, minframe.GetPacketMinFrameBitCount(tmats, &hdr, 
         pkt_sync_pattern_bits));
 
     tmats.min_frame_sync_pattern_len_ = 18;
@@ -239,7 +256,7 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameBitCountAlign16Packed)
         int pad_bits = 16 - (expected % 16);
         expected += pad_bits;
     }
-    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+    EXPECT_EQ(expected, minframe.GetPacketMinFrameBitCount(tmats, &hdr, 
         pkt_sync_pattern_bits));
 }
 
@@ -256,13 +273,14 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameBitCountThroughput)
     hdr.mode_throughput = 1;
     hdr.mode_align = 1;  // 32-bit
     int pkt_sync_pattern_bits = 38;  // not relevant for calculation
+    Ch10PCMF1MinorFrame minframe;
 
-    EXPECT_EQ(tmats.bits_in_min_frame_, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+    EXPECT_EQ(tmats.bits_in_min_frame_, minframe.GetPacketMinFrameBitCount(tmats, &hdr, 
         pkt_sync_pattern_bits));
 
     
     hdr.mode_align = 0;
-    EXPECT_EQ(tmats.bits_in_min_frame_, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+    EXPECT_EQ(tmats.bits_in_min_frame_, minframe.GetPacketMinFrameBitCount(tmats, &hdr, 
         pkt_sync_pattern_bits));
 }
 
@@ -281,6 +299,7 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameBitCountAlign32Packed)
     hdr.mode_throughput = 0;
     hdr.mode_align = 1;  // 32-bit
     int pkt_sync_pattern_bits = 0;
+    Ch10PCMF1MinorFrame minframe;
 
     // 142
     int expected = (tmats.words_in_min_frame_ - 1)*tmats.common_word_length_
@@ -291,7 +310,7 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameBitCountAlign32Packed)
         int pad_bits = 32 - (expected % 32);
         expected += pad_bits;
     }
-    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+    EXPECT_EQ(expected, minframe.GetPacketMinFrameBitCount(tmats, &hdr, 
         pkt_sync_pattern_bits));
 
     tmats.words_in_min_frame_ = 9;
@@ -303,7 +322,7 @@ TEST_F(Ch10PCMF1ComponentTest, GetPacketMinFrameBitCountAlign32Packed)
         int pad_bits = 32 - (expected % 32);
         expected += pad_bits;
     }
-    EXPECT_EQ(expected, comp_.GetPacketMinFrameBitCount(tmats, &hdr, 
+    EXPECT_EQ(expected, minframe.GetPacketMinFrameBitCount(tmats, &hdr, 
         pkt_sync_pattern_bits));
 }
 
@@ -316,7 +335,9 @@ TEST_F(Ch10PCMF1ComponentTest, CalculateMinorFrameCountNoThroughput)
     Ch10PCMTMATSData tmats;
     uint32_t minor_frame_count = 0;
     uint32_t minor_frame_size = 0;
-    EXPECT_FALSE(comp_.CalculateMinorFrameCount(pkt_data_sz, tmats, 
+    Ch10PCMF1MinorFrame minframe;
+    Ch10PCMF1Calculations calcs;
+    EXPECT_FALSE(calcs.CalculateMinorFrameCount(&minframe, pkt_data_sz, tmats, 
         &hdr, minor_frame_count, minor_frame_size));
 }
 
@@ -339,8 +360,9 @@ TEST_F(Ch10PCMF1ComponentTest, CalculateMinorFrameCountNoIPH)
     uint32_t input_pkt_data_sz = (output_min_frame_bit_count/8) * input_min_frame_count;
     uint32_t temp_minor_frame_count = 0;
     uint32_t temp_minor_frame_size = 0;
-
-    EXPECT_FALSE(mock_pcmf1_.CalculateMinorFrameCount(input_pkt_data_sz, 
+    Ch10PCMF1Calculations calcs;
+    Ch10PCMF1MinorFrame minframe;
+    EXPECT_FALSE(calcs.CalculateMinorFrameCount(&minframe, input_pkt_data_sz, 
         tmats, &hdr, temp_minor_frame_count, temp_minor_frame_size));
 }
 
@@ -365,14 +387,16 @@ TEST_F(Ch10PCMF1ComponentTest, CalculateMinorFrameCountNonIntegerFrameCount)
         input_min_frame_count + 23; // 23 is not multiple of minor frame size
     uint32_t temp_minor_frame_count = 0;
     uint32_t temp_minor_frame_size = 0;
+    MockCh10PCMF1MinorFrame mock_minframe;
+    Ch10PCMF1Calculations calcs;
 
-    EXPECT_CALL(mock_pcmf1_, GetPacketMinFrameSyncPatternBitCount(&hdr, 
+    EXPECT_CALL(mock_minframe, GetPacketMinFrameSyncPatternBitCount(&hdr, 
         input_sync_pattern_len_bits)).WillOnce(
             Return(output_sync_pattern_len_bits));
-    EXPECT_CALL(mock_pcmf1_, GetPacketMinFrameBitCount(tmats, &hdr, 
+    EXPECT_CALL(mock_minframe, GetPacketMinFrameBitCount(tmats, &hdr, 
         output_sync_pattern_len_bits)).WillOnce(Return(output_min_frame_bit_count));
 
-    EXPECT_FALSE(mock_pcmf1_.CalculateMinorFrameCount(input_pkt_data_sz, 
+    EXPECT_FALSE(calcs.CalculateMinorFrameCount(&mock_minframe, input_pkt_data_sz, 
         tmats, &hdr, temp_minor_frame_count, temp_minor_frame_size));
 }
 
@@ -397,17 +421,23 @@ TEST_F(Ch10PCMF1ComponentTest, CalculateMinorFrameCount16BitMode)
         input_min_frame_count;
     uint32_t temp_minor_frame_count = 0;
     uint32_t temp_minor_frame_size = 0;
+    MockCh10PCMF1MinorFrame mock_minframe;
+    Ch10PCMF1Calculations calcs;
 
-    EXPECT_CALL(mock_pcmf1_, GetPacketMinFrameSyncPatternBitCount(&hdr, 
+    EXPECT_CALL(mock_minframe, GetPacketMinFrameSyncPatternBitCount(&hdr, 
         input_sync_pattern_len_bits)).WillOnce(
             Return(output_sync_pattern_len_bits));
-    EXPECT_CALL(mock_pcmf1_, GetPacketMinFrameBitCount(tmats, &hdr, 
+    EXPECT_CALL(mock_minframe, GetPacketMinFrameBitCount(tmats, &hdr, 
         output_sync_pattern_len_bits)).WillOnce(Return(output_min_frame_bit_count));
 
-    EXPECT_TRUE(mock_pcmf1_.CalculateMinorFrameCount(input_pkt_data_sz, 
+    EXPECT_TRUE(calcs.CalculateMinorFrameCount(&mock_minframe, input_pkt_data_sz, 
         tmats, &hdr, temp_minor_frame_count, temp_minor_frame_size));
     EXPECT_EQ(temp_minor_frame_count, input_min_frame_count);
     EXPECT_EQ(temp_minor_frame_size, output_min_frame_bit_count/8);
+    EXPECT_EQ(calcs.GetPktSyncPatternLenBytes(), 
+        output_sync_pattern_len_bits / 8);
+    EXPECT_EQ(calcs.GetPktMinFrameLenBytes(), 
+        output_min_frame_bit_count / 8);
 }
 
 TEST_F(Ch10PCMF1ComponentTest, CalculateMinorFrameCount32BitMode)
@@ -431,15 +461,42 @@ TEST_F(Ch10PCMF1ComponentTest, CalculateMinorFrameCount32BitMode)
         input_min_frame_count;
     uint32_t temp_minor_frame_count = 0;
     uint32_t temp_minor_frame_size = 0;
+    MockCh10PCMF1MinorFrame mock_minframe;
+    Ch10PCMF1Calculations calcs;
 
-    EXPECT_CALL(mock_pcmf1_, GetPacketMinFrameSyncPatternBitCount(&hdr, 
+    EXPECT_CALL(mock_minframe, GetPacketMinFrameSyncPatternBitCount(&hdr, 
         input_sync_pattern_len_bits)).WillOnce(
             Return(output_sync_pattern_len_bits));
-    EXPECT_CALL(mock_pcmf1_, GetPacketMinFrameBitCount(tmats, &hdr, 
+    EXPECT_CALL(mock_minframe, GetPacketMinFrameBitCount(tmats, &hdr, 
         output_sync_pattern_len_bits)).WillOnce(Return(output_min_frame_bit_count));
-
-    EXPECT_TRUE(mock_pcmf1_.CalculateMinorFrameCount(input_pkt_data_sz, 
+    EXPECT_TRUE(calcs.CalculateMinorFrameCount(&mock_minframe, input_pkt_data_sz, 
         tmats, &hdr, temp_minor_frame_count, temp_minor_frame_size));
     EXPECT_EQ(temp_minor_frame_count, input_min_frame_count);
     EXPECT_EQ(temp_minor_frame_size, output_min_frame_bit_count/8);
+    EXPECT_EQ(calcs.GetPktSyncPatternLenBytes(),
+        output_sync_pattern_len_bits / 8);
+    EXPECT_EQ(calcs.GetPktMinFrameLenBytes(), 
+        output_min_frame_bit_count / 8);
 }
+
+// TEST_F(Ch10PCMF1ComponentTest, ParseFramesCalculateMinorFrameCountFail)
+// {
+//     PCMF1CSDWFmt hdr{};
+//     Ch10PCMTMATSData tmats;
+//     uint32_t temp_minor_frame_count = 0;
+//     uint32_t temp_minor_frame_size = 0;
+//     MockCh10Context mock_ctx;
+
+//     // arbitrary at this stage, just need to ensure that correct vars are passed
+//     // in the right places
+//     uint32_t packet_data_size = 456;
+//     uint32_t minor_frame_count = 77;
+//     uint32_t minor_frame_size_bytes = 298;
+
+//     EXPECT_CALL(mock_ctx, GetPacketDataSizeBytes()).WillOnce(
+//         ReturnRef(packet_data_size));
+//     EXPECT_CALL(mock_pcmf1_, CalculateMinorFrameCount(packet_data_size, tmats, 
+//         &hdr, _, _)).WillOnce(Return(false));
+//     EXPECT_EQ(Ch10Status::PCMF1_ERROR, mock_pcmf1_.ParseFrames(data_ptr_, tmats, 
+//         &hdr, &mock_ctx));
+// }

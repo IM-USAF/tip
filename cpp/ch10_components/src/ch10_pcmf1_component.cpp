@@ -1,6 +1,6 @@
 #include "ch10_pcmf1_component.h"
 
-const int Ch10PCMF1Component::IPTS_len_bytes_ = 8;
+// const int IPTS_len_bytes_ = 8;
 
 Ch10Status Ch10PCMF1Component::Parse(const uint8_t*& data)
 {
@@ -95,17 +95,21 @@ Ch10Status Ch10PCMF1Component::Parse(const uint8_t*& data)
     return Ch10Status::OK;
 }
 
-Ch10Status Ch10PCMF1Component::ParseFrames(const uint8_t*& data, 
-    const Ch10PCMTMATSData& pcmdata)
+Ch10Status Ch10PCMF1Component::ParseFrames(Ch10PCMF1Calculations* calcs,  
+    uint8_t*& data, const Ch10PCMTMATSData& tmats, const PCMF1CSDWFmt* hdr, 
+    Ch10Context* const ctx)
 {
     // Note: When throughput mode needs to be handled do not use 
     // this function. The presence of frames at all contradicts with
     // throughput mode. 
     uint32_t minor_frame_count = 0;
     uint32_t minor_frame_size_bytes = 0;
-    if(!CalculateMinorFrameCount(ctx_->data_size, pcmdata, 
-        *pcmf1_csdw_elem_.element, minor_frame_count, minor_frame_size_bytes))
+    Ch10PCMF1MinorFrame minframe;
+    if(!calcs->CalculateMinorFrameCount(&minframe, ctx->GetPacketDataSizeBytes(), 
+        tmats, hdr, minor_frame_count, minor_frame_size_bytes))
+    {
         Ch10Status::PCMF1_ERROR;    
+    }
 
     return Ch10Status::OK;
 }
@@ -121,9 +125,9 @@ bool Ch10PCMF1Component::CheckFrameIndicator(const uint32_t& throughput, const u
     return true;
 }
 
-bool Ch10PCMF1Component::CalculateMinorFrameCount(
-    const uint32_t& pkt_data_sz, const Ch10PCMTMATSData& tmats,
-    const PCMF1CSDWFmt* hdr, 
+bool Ch10PCMF1Calculations::CalculateMinorFrameCount(
+    Ch10PCMF1MinorFrame* minframe, const uint32_t& pkt_data_sz, 
+    const Ch10PCMTMATSData& tmats, const PCMF1CSDWFmt* hdr, 
     uint32_t& minor_frame_count, uint32_t& minor_frame_size)
 {
     if(hdr->mode_throughput)
@@ -143,13 +147,15 @@ bool Ch10PCMF1Component::CalculateMinorFrameCount(
     }
 
     // The length of the sync pattern as placed into the packet.
-    int pkt_sync_pattern_len_bits = GetPacketMinFrameSyncPatternBitCount(
+    int pkt_sync_pattern_len_bits = minframe->GetPacketMinFrameSyncPatternBitCount(
         hdr, tmats.min_frame_sync_pattern_len_);
+    pkt_sync_pattern_len_bytes_ = pkt_sync_pattern_len_bits / 8;
 
     // The length of the minor frame as placed into the packet, i.e., 
     // with all of the padding, etc., in bytes.
-    minor_frame_size = GetPacketMinFrameBitCount(tmats, hdr, 
+    minor_frame_size = minframe->GetPacketMinFrameBitCount(tmats, hdr, 
         pkt_sync_pattern_len_bits) / 8;
+    pkt_minor_frame_len_bytes_ = minor_frame_size;
 
     if(hdr->mode_align == 0)
         IPDH_len_bytes_ = 2;
@@ -157,8 +163,8 @@ bool Ch10PCMF1Component::CalculateMinorFrameCount(
         IPDH_len_bytes_ = 4;
 
     minor_frame_count = pkt_data_sz / 
-        (minor_frame_size + IPDH_len_bytes_ + IPTS_len_bytes_);
-    if (pkt_data_sz % (minor_frame_size + IPDH_len_bytes_ + IPTS_len_bytes_) != 0)
+        (minor_frame_size + IPDH_len_bytes_ + IPTS_len_bytes);
+    if (pkt_data_sz % (minor_frame_size + IPDH_len_bytes_ + IPTS_len_bytes) != 0)
     {
         SPDLOG_ERROR("Ch10PCMF1Component::CalculateMinorFrameCount: "
             "Ch10 packet data size in bytes ({:d}) divided by minor frame "
@@ -171,7 +177,7 @@ bool Ch10PCMF1Component::CalculateMinorFrameCount(
 }
 
 
-int Ch10PCMF1Component::GetPacketMinFrameSyncPatternBitCount(const PCMF1CSDWFmt* hdr, 
+int Ch10PCMF1MinorFrame::GetPacketMinFrameSyncPatternBitCount(const PCMF1CSDWFmt* hdr, 
     const int& sync_pattern_len_bits)
 {
     if(hdr->mode_unpacked == 1)
@@ -202,7 +208,7 @@ int Ch10PCMF1Component::GetPacketMinFrameSyncPatternBitCount(const PCMF1CSDWFmt*
         return -1;
 }
 
-int Ch10PCMF1Component::GetPacketMinFrameBitCount(const Ch10PCMTMATSData& tmats,
+int Ch10PCMF1MinorFrame::GetPacketMinFrameBitCount(const Ch10PCMTMATSData& tmats,
     const PCMF1CSDWFmt* hdr, const int& pkt_sync_pattern_bits)
 {
     if(hdr->mode_unpacked)

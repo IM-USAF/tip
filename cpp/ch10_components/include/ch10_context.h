@@ -230,7 +230,7 @@ class Ch10Context
     virtual void AddTMATSMatter(const std::string& matter) { tmats_matter_ += matter; }
 
     virtual const std::set<Ch10PacketType>& GetParsedPacketTypes() const { return parsed_packet_types_; }
-
+    virtual const uint32_t& GetPacketDataSizeBytes() const { return data_size_; }
 
     /*
 	Return is_configured_. This value is set during call to CheckConfiguration.
