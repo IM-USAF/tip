@@ -479,24 +479,48 @@ TEST_F(Ch10PCMF1ComponentTest, CalculateMinorFrameCount32BitMode)
         output_min_frame_bit_count / 8);
 }
 
-// TEST_F(Ch10PCMF1ComponentTest, ParseFramesCalculateMinorFrameCountFail)
-// {
-//     PCMF1CSDWFmt hdr{};
-//     Ch10PCMTMATSData tmats;
-//     uint32_t temp_minor_frame_count = 0;
-//     uint32_t temp_minor_frame_size = 0;
-//     MockCh10Context mock_ctx;
+TEST_F(Ch10PCMF1ComponentTest, ParseFramesCalculateMinorFrameCountFail)
+{
+    PCMF1CSDWFmt hdr{};
+    Ch10PCMTMATSData tmats;
+    uint32_t temp_minor_frame_count = 0;
+    uint32_t temp_minor_frame_size = 0;
+    MockCh10Context mock_ctx;
+    MockCh10PCMF1Calculations mock_calcs;
+    // arbitrary at this stage, just need to ensure that correct vars are passed
+    // in the right places
+    uint32_t packet_data_size = 456;
+    uint32_t minor_frame_count = 77;
+    uint32_t minor_frame_size_bytes = 298;
 
-//     // arbitrary at this stage, just need to ensure that correct vars are passed
-//     // in the right places
-//     uint32_t packet_data_size = 456;
-//     uint32_t minor_frame_count = 77;
-//     uint32_t minor_frame_size_bytes = 298;
+    EXPECT_CALL(mock_ctx, GetPacketDataSizeBytes()).WillOnce(
+        ReturnRef(packet_data_size));
+    EXPECT_CALL(mock_calcs, CalculateMinorFrameCount(_, packet_data_size, tmats, 
+        &hdr, _, _)).WillOnce(Return(false));
+    EXPECT_EQ(Ch10Status::PCMF1_ERROR, comp_.ParseFrames(&mock_calcs, data_ptr_, 
+        tmats, &hdr, &mock_ctx));
+}
 
-//     EXPECT_CALL(mock_ctx, GetPacketDataSizeBytes()).WillOnce(
-//         ReturnRef(packet_data_size));
-//     EXPECT_CALL(mock_pcmf1_, CalculateMinorFrameCount(packet_data_size, tmats, 
-//         &hdr, _, _)).WillOnce(Return(false));
-//     EXPECT_EQ(Ch10Status::PCMF1_ERROR, mock_pcmf1_.ParseFrames(data_ptr_, tmats, 
-//         &hdr, &mock_ctx));
-// }
+TEST_F(Ch10PCMF1ComponentTest, CalculateAbsTimeParseIPTSError)
+{
+    // ///////////////////// not functional yet
+    // to do:
+    // test CalculateAbsTime, integrate into ParseFrames
+    // add tests for parseframes
+    // continue to impl parseframe
+    MockCh10Context mock_ctx;
+
+    MockCh10PCMF1Calculations mock_calcs;
+    // arbitrary at this stage, just need to ensure that correct vars are passed
+    // in the right places
+    uint32_t packet_data_size = 456;
+    uint32_t minor_frame_count = 77;
+    uint32_t minor_frame_size_bytes = 298;
+
+    EXPECT_CALL(mock_ctx, GetPacketDataSizeBytes()).WillOnce(
+        ReturnRef(packet_data_size));
+    EXPECT_CALL(mock_calcs, CalculateMinorFrameCount(_, packet_data_size, tmats, 
+        &hdr, _, _)).WillOnce(Return(false));
+    EXPECT_EQ(Ch10Status::PCMF1_ERROR, comp_.ParseFrames(&mock_calcs, data_ptr_, 
+        tmats, &hdr, &mock_ctx));
+}

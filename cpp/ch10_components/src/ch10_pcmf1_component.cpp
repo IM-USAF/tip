@@ -96,8 +96,8 @@ Ch10Status Ch10PCMF1Component::Parse(const uint8_t*& data)
 }
 
 Ch10Status Ch10PCMF1Component::ParseFrames(Ch10PCMF1Calculations* calcs,  
-    uint8_t*& data, const Ch10PCMTMATSData& tmats, const PCMF1CSDWFmt* hdr, 
-    Ch10Context* const ctx)
+    const uint8_t*& data, const Ch10PCMTMATSData& tmats, const PCMF1CSDWFmt* hdr, 
+    Ch10Context* const ctx, Ch10Time& ch10time)
 {
     // Note: When throughput mode needs to be handled do not use 
     // this function. The presence of frames at all contradicts with
@@ -108,7 +108,22 @@ Ch10Status Ch10PCMF1Component::ParseFrames(Ch10PCMF1Calculations* calcs,
     if(!calcs->CalculateMinorFrameCount(&minframe, ctx->GetPacketDataSizeBytes(), 
         tmats, hdr, minor_frame_count, minor_frame_size_bytes))
     {
-        Ch10Status::PCMF1_ERROR;    
+        return Ch10Status::PCMF1_ERROR;    
+    }
+
+    // Loop and first parse IPH
+    for(int min_frame_index = 0; min_frame_index < minor_frame_count; min_frame_index++)
+    {
+        status_ = calcs->CalculateAbsTime(data, ch10time, ctx, abs_time_);
+        if(status_ != Ch10Status::OK)
+            return status_;
+
+        // Parse the intra-packet data header prior to each
+        // message payload. The data pointer will be updated to
+        // the byte immediately following the header, which is the
+        // first byte of the payload.
+        // ParseElements(milstd1553f1_ip_data_hdr_elem_vec_, data);
+
     }
 
     return Ch10Status::OK;
@@ -175,6 +190,24 @@ bool Ch10PCMF1Calculations::CalculateMinorFrameCount(
 
     return true; 
 }
+
+Ch10Status Ch10PCMF1Calculations::CalculateAbsTime(const uint8_t*& data, 
+    Ch10Time& ch10time, Ch10Context* const ctx, uint64_t& abs_time_ns)
+{
+    // Parse the time component of the intra-packet header. The
+    // data pointer will updated to the position immediately following
+    // the time bytes block.
+    status_ = ch10time.ParseIPTS(data, ipts_time_, ctx_->GetIntrapktTSSrc(),
+                                    ctx_->GetTimeFormat());
+    if (status_ != Ch10Status::OK)
+        return status_;
+
+    // Calculate the absolute time using data that were obtained
+    // from the IPTS.
+    abs_time_ns = ctx_->CalculateIPTSAbsTime(ipts_time_);
+    return status_;
+}
+
 
 
 int Ch10PCMF1MinorFrame::GetPacketMinFrameSyncPatternBitCount(const PCMF1CSDWFmt* hdr, 

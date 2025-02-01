@@ -69,6 +69,12 @@ class Ch10PCMF1MinorFrame
 class Ch10PCMF1Calculations
 {
     private:
+
+        Ch10Status status_;
+
+        // Time obtained from IPTS, nanosecond units
+        uint64_t ipts_time_;
+
         // Length of the sync pattern as recorded in the packet, which includes
         // padding, etc. 
         int pkt_sync_pattern_len_bytes_;
@@ -82,7 +88,8 @@ class Ch10PCMF1Calculations
 
     public:
         Ch10PCMF1Calculations() : pkt_sync_pattern_len_bytes_(-1), 
-            pkt_minor_frame_len_bytes_(-1), IPDH_len_bytes_(-1)
+            pkt_minor_frame_len_bytes_(-1), IPDH_len_bytes_(-1), ipts_time_(0),
+            status_(Ch10Status::NONE)
         {}
         const int& GetPktSyncPatternLenBytes() const { return pkt_sync_pattern_len_bytes_; }
         const int& GetPktMinFrameLenBytes() const { return pkt_minor_frame_len_bytes_; }
@@ -113,6 +120,23 @@ class Ch10PCMF1Calculations
         const Ch10PCMTMATSData& tmats, const PCMF1CSDWFmt* hdr, 
         uint32_t& minor_frame_count, uint32_t& minor_frame_size);
 
+    
+    /*
+    Parse and calculate the IPTS.
+
+    Args:
+		data		    --> pointer to the first byte in the series of
+						    messages
+        ch10time        --> Ch10Time object
+        ctx             --> Ch10Context object
+        abs_time_ns     --> Absolute time in nanoseconds, the primary
+                            value of interest to be obtained.
+
+    Return:
+        Ch10status indicating OK if no issues, other status otherwise.
+    */
+    Ch10Status CalculateAbsTime(const uint8_t*& data, Ch10Time& ch10time, 
+        Ch10Context* const ctx, uint64_t& abs_time_ns);
 };
 
 
@@ -137,8 +161,6 @@ class Ch10PCMF1Component : public Ch10PacketComponent
     // since the epoch.
     uint64_t abs_time_;
 
-    // Time obtained from IPTS, nanosecond units
-    uint64_t ipts_time_;
 
     Ch10Time ch10_time_;
 
@@ -166,7 +188,6 @@ class Ch10PCMF1Component : public Ch10PacketComponent
         abs_time_(0),
         abs_time(abs_time_),
         ch10_time_(),
-        ipts_time_(0),
         majframe_len_bits_(-1)
     { }
 
@@ -189,13 +210,14 @@ class Ch10PCMF1Component : public Ch10PacketComponent
                         relevant to current PCM packet
         hdr         --> PCMF1CSDWFmt object
         ctx         --> Ch10Context object
+        ch10time    --> Ch10Time object
 
 	Return:
 		Ch10Status::OK if no problems, otherwise a different Ch10Status code.
 	*/
     Ch10Status ParseFrames(Ch10PCMF1Calculations* calcs, 
-        uint8_t*& data, const Ch10PCMTMATSData& tmats,
-        const PCMF1CSDWFmt* hdr, Ch10Context* const ctx);
+        const uint8_t*& data, const Ch10PCMTMATSData& tmats,
+        const PCMF1CSDWFmt* hdr, Ch10Context* const ctx, Ch10Time& ch10time);
 
     // Ch10Status ParsePayload(const uint8_t*& data,
     //                         const PCMF1DataHeaderCommWordFmt* data_header);

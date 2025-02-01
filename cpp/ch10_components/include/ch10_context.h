@@ -231,6 +231,8 @@ class Ch10Context
 
     virtual const std::set<Ch10PacketType>& GetParsedPacketTypes() const { return parsed_packet_types_; }
     virtual const uint32_t& GetPacketDataSizeBytes() const { return data_size_; }
+    virtual const uint8_t& GetIntrapktTSSrc() const {return intrapkt_ts_src_; }
+    virtual const uint8_t& GetTimeFormat() const {return time_format_; }
 
     /*
 	Return is_configured_. This value is set during call to CheckConfiguration.
