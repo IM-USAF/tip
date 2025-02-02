@@ -11,6 +11,8 @@ class MockCh10Time: public Ch10Time
     MockCh10Time() : Ch10Time() {}
     MOCK_METHOD2(CalculateRTCTimeFromComponents, uint64_t&(const uint32_t& rtc1, 
         const uint32_t& rtc2));
+    MOCK_METHOD4(ParseIPTS, Ch10Status(const uint8_t*& data, uint64_t& time_ns,
+                                 uint8_t intrapkt_ts_src, uint8_t time_fmt));
 };
 
 #endif  // CH10_TIME_MOCK_H_

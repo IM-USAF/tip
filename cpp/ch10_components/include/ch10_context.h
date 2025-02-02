@@ -403,7 +403,7 @@ class Ch10Context
 	Return:
 		Absolute time in units of nanoseconds since the epoch
 	*/
-    virtual uint64_t& CalculateIPTSAbsTime(const uint64_t& ipts_time);
+    virtual const uint64_t& CalculateIPTSAbsTime(const uint64_t& ipts_time);
 
     /*
 	Calculate and return the absolute time of an ARINC 429 word using the

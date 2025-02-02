@@ -333,7 +333,7 @@ uint64_t& Ch10Context::GetPacketAbsoluteTimeFromHeaderRTC()
     return temp_abs_time_;
 }
 
-uint64_t& Ch10Context::CalculateIPTSAbsTime(const uint64_t& ipts_time)
+const uint64_t& Ch10Context::CalculateIPTSAbsTime(const uint64_t& ipts_time)
 {
     // Handle RTC time or other format indicated by time_format_. RTC time is indicated
     // by intrapkt_ts_src_ = 0.

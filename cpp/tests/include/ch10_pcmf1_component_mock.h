@@ -31,6 +31,8 @@ class MockCh10PCMF1Calculations: public Ch10PCMF1Calculations
         const uint32_t& pkt_data_sz,  
         const Ch10PCMTMATSData& tmats, const PCMF1CSDWFmt* hdr, 
         uint32_t& minor_frame_count, uint32_t& minor_frame_size));
+    MOCK_METHOD4(CalculateAbsTime, Ch10Status(const uint8_t*& data, 
+        Ch10Time* const ch10time, Ch10Context* const ctx, uint64_t& abs_time_ns));
 };
 
 

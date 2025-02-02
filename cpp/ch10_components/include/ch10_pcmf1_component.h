@@ -135,7 +135,7 @@ class Ch10PCMF1Calculations
     Return:
         Ch10status indicating OK if no issues, other status otherwise.
     */
-    Ch10Status CalculateAbsTime(const uint8_t*& data, Ch10Time& ch10time, 
+    Ch10Status CalculateAbsTime(const uint8_t*& data, Ch10Time* const ch10time, 
         Ch10Context* const ctx, uint64_t& abs_time_ns);
 };
 
@@ -217,7 +217,7 @@ class Ch10PCMF1Component : public Ch10PacketComponent
 	*/
     Ch10Status ParseFrames(Ch10PCMF1Calculations* calcs, 
         const uint8_t*& data, const Ch10PCMTMATSData& tmats,
-        const PCMF1CSDWFmt* hdr, Ch10Context* const ctx, Ch10Time& ch10time);
+        const PCMF1CSDWFmt* hdr, Ch10Context* const ctx, Ch10Time* const ch10time);
 
     // Ch10Status ParsePayload(const uint8_t*& data,
     //                         const PCMF1DataHeaderCommWordFmt* data_header);

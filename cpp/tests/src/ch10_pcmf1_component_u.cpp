@@ -1,16 +1,19 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "ch10_context_mock.h"
+#include "ch10_time_mock.h"
 #include "ch10_pcmf1_component.h"
 #include "ch10_pcmf1_component_mock.h"
 
 using ::testing::NiceMock;
 using ::testing::Return;
 using ::testing::ReturnRef;
-using ::testing::Property;
-using ::testing::Eq;
+// using ::testing::Property;
+// using ::testing::Eq;
 using ::testing::_;
-using ::testing::Ref;
+// using ::testing::Ref;
+using ::testing::DoAll;
+using ::testing::SetArgReferee;
 
 class Ch10PCMF1ComponentTest : public ::testing::Test
 {
@@ -487,6 +490,7 @@ TEST_F(Ch10PCMF1ComponentTest, ParseFramesCalculateMinorFrameCountFail)
     uint32_t temp_minor_frame_size = 0;
     MockCh10Context mock_ctx;
     MockCh10PCMF1Calculations mock_calcs;
+    Ch10Time ch10time;
     // arbitrary at this stage, just need to ensure that correct vars are passed
     // in the right places
     uint32_t packet_data_size = 456;
@@ -498,7 +502,36 @@ TEST_F(Ch10PCMF1ComponentTest, ParseFramesCalculateMinorFrameCountFail)
     EXPECT_CALL(mock_calcs, CalculateMinorFrameCount(_, packet_data_size, tmats, 
         &hdr, _, _)).WillOnce(Return(false));
     EXPECT_EQ(Ch10Status::PCMF1_ERROR, comp_.ParseFrames(&mock_calcs, data_ptr_, 
-        tmats, &hdr, &mock_ctx));
+        tmats, &hdr, &mock_ctx, &ch10time));
+}
+
+TEST_F(Ch10PCMF1ComponentTest, ParseFramesCalculateAbsTimeFail)
+{
+    PCMF1CSDWFmt hdr{};
+    Ch10PCMTMATSData tmats;
+    uint32_t temp_minor_frame_count = 0;
+    uint32_t temp_minor_frame_size = 0;
+    MockCh10Context mock_ctx;
+    MockCh10PCMF1Calculations mock_calcs;
+    Ch10Time ch10time;
+    // arbitrary at this stage, just need to ensure that correct vars are passed
+    // in the right places
+    uint32_t packet_data_size = 456;
+    uint32_t expected_minor_frame_count = 77;
+    uint32_t expected_minor_frame_size_bytes = 298;
+    uint32_t minor_frame_count = 0;
+    uint32_t minor_frame_size_bytes = 0;
+    uint64_t abs_time = 0;
+
+    EXPECT_CALL(mock_ctx, GetPacketDataSizeBytes()).WillOnce(
+        ReturnRef(packet_data_size));
+    EXPECT_CALL(mock_calcs, CalculateMinorFrameCount(_, packet_data_size, tmats, 
+        &hdr, _, _)).WillOnce(DoAll(Return(true), 
+        SetArgReferee<3>(expected_minor_frame_count), SetArgReferee<4>(expected_minor_frame_size_bytes)));
+    EXPECT_CALL(mock_calcs, CalculateAbsTime(data_ptr_, &ch10time, &mock_ctx, 
+        abs_time)).WillOnce(Return(Ch10Status::INVALID_INTRAPKT_TS_SRC));
+    EXPECT_EQ(Ch10Status::PCMF1_ERROR, comp_.ParseFrames(&mock_calcs, data_ptr_, 
+        tmats, &hdr, &mock_ctx, &ch10time));
 }
 
 TEST_F(Ch10PCMF1ComponentTest, CalculateAbsTimeParseIPTSError)
@@ -508,19 +541,48 @@ TEST_F(Ch10PCMF1ComponentTest, CalculateAbsTimeParseIPTSError)
     // test CalculateAbsTime, integrate into ParseFrames
     // add tests for parseframes
     // continue to impl parseframe
+    Ch10PCMF1Calculations calcs;
     MockCh10Context mock_ctx;
+    MockCh10Time mock_ch10time;
+    uint64_t expected_abs_time_ns = 0;
+    uint64_t abs_time_ns = 0;
+    uint64_t expected_ipts_time = 584838282;
+    uint64_t ipts_time = 0;
+    uint8_t intrapkt_ts_src = 9;  // arb
+    uint8_t time_fmt = 23;  // arbi
+    Ch10Status expected_status = Ch10Status::INVALID_INTRAPKT_TS_SRC;
 
-    MockCh10PCMF1Calculations mock_calcs;
-    // arbitrary at this stage, just need to ensure that correct vars are passed
-    // in the right places
-    uint32_t packet_data_size = 456;
-    uint32_t minor_frame_count = 77;
-    uint32_t minor_frame_size_bytes = 298;
+    EXPECT_CALL(mock_ctx, GetIntrapktTSSrc()).WillOnce(ReturnRef(intrapkt_ts_src));
+    EXPECT_CALL(mock_ctx, GetTimeFormat()).WillOnce(ReturnRef(time_fmt));
+    EXPECT_CALL(mock_ch10time, ParseIPTS(data_ptr_, ipts_time, intrapkt_ts_src,
+        time_fmt)).WillOnce(DoAll(SetArgReferee<1>(expected_ipts_time), 
+        Return(expected_status)));
+    EXPECT_EQ(expected_status, calcs.CalculateAbsTime(data_ptr_, &mock_ch10time, 
+        &mock_ctx, abs_time_ns));
+}
 
-    EXPECT_CALL(mock_ctx, GetPacketDataSizeBytes()).WillOnce(
-        ReturnRef(packet_data_size));
-    EXPECT_CALL(mock_calcs, CalculateMinorFrameCount(_, packet_data_size, tmats, 
-        &hdr, _, _)).WillOnce(Return(false));
-    EXPECT_EQ(Ch10Status::PCMF1_ERROR, comp_.ParseFrames(&mock_calcs, data_ptr_, 
-        tmats, &hdr, &mock_ctx));
+TEST_F(Ch10PCMF1ComponentTest, CalculateAbsTime)
+{
+    Ch10PCMF1Calculations calcs;
+    MockCh10Context mock_ctx;
+    MockCh10Time mock_ch10time;
+    uint64_t expected_abs_time_ns = 0;
+    uint64_t abs_time_ns = 0;
+    uint64_t expected_ipts_time = 584838282;
+    uint64_t ipts_time = 0;
+    uint8_t intrapkt_ts_src = 9;  // arb
+    uint8_t time_fmt = 23;  // arbi
+    Ch10Status expected_status = Ch10Status::OK;
+
+    EXPECT_CALL(mock_ctx, GetIntrapktTSSrc()).WillOnce(ReturnRef(intrapkt_ts_src));
+    EXPECT_CALL(mock_ctx, GetTimeFormat()).WillOnce(ReturnRef(time_fmt));
+    EXPECT_CALL(mock_ch10time, ParseIPTS(data_ptr_, ipts_time, intrapkt_ts_src,
+        time_fmt)).WillOnce(DoAll(SetArgReferee<1>(expected_ipts_time), 
+        Return(expected_status)));
+    EXPECT_CALL(mock_ctx, CalculateIPTSAbsTime(expected_ipts_time)).WillOnce(
+        ReturnRef(expected_abs_time_ns));
+    Ch10Status status = calcs.CalculateAbsTime(data_ptr_, &mock_ch10time, 
+        &mock_ctx, abs_time_ns);
+    EXPECT_EQ(expected_status, status);
+    EXPECT_EQ(expected_abs_time_ns, abs_time_ns);
 }

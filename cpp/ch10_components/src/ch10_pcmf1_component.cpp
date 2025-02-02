@@ -97,7 +97,7 @@ Ch10Status Ch10PCMF1Component::Parse(const uint8_t*& data)
 
 Ch10Status Ch10PCMF1Component::ParseFrames(Ch10PCMF1Calculations* calcs,  
     const uint8_t*& data, const Ch10PCMTMATSData& tmats, const PCMF1CSDWFmt* hdr, 
-    Ch10Context* const ctx, Ch10Time& ch10time)
+    Ch10Context* const ctx, Ch10Time* const ch10time)
 {
     // Note: When throughput mode needs to be handled do not use 
     // this function. The presence of frames at all contradicts with
@@ -192,19 +192,19 @@ bool Ch10PCMF1Calculations::CalculateMinorFrameCount(
 }
 
 Ch10Status Ch10PCMF1Calculations::CalculateAbsTime(const uint8_t*& data, 
-    Ch10Time& ch10time, Ch10Context* const ctx, uint64_t& abs_time_ns)
+    Ch10Time* const ch10time, Ch10Context* const ctx, uint64_t& abs_time_ns)
 {
     // Parse the time component of the intra-packet header. The
     // data pointer will updated to the position immediately following
     // the time bytes block.
-    status_ = ch10time.ParseIPTS(data, ipts_time_, ctx_->GetIntrapktTSSrc(),
-                                    ctx_->GetTimeFormat());
+    status_ = ch10time->ParseIPTS(data, ipts_time_, ctx->GetIntrapktTSSrc(),
+                                    ctx->GetTimeFormat());
     if (status_ != Ch10Status::OK)
         return status_;
 
     // Calculate the absolute time using data that were obtained
     // from the IPTS.
-    abs_time_ns = ctx_->CalculateIPTSAbsTime(ipts_time_);
+    abs_time_ns = ctx->CalculateIPTSAbsTime(ipts_time_);
     return status_;
 }
 

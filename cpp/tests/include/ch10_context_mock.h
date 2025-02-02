@@ -28,6 +28,9 @@ class MockCh10Context: public Ch10Context
     MOCK_CONST_METHOD0(GetTMATSMatter, std::string());
     MOCK_CONST_METHOD0(GetParsedPacketTypes, const std::set<Ch10PacketType>&());
     MOCK_CONST_METHOD0(GetPacketDataSizeBytes, const uint32_t&());
+    MOCK_CONST_METHOD0(GetIntrapktTSSrc, const uint8_t&());
+    MOCK_CONST_METHOD0(GetTimeFormat, const uint8_t&());
+    MOCK_METHOD1(CalculateIPTSAbsTime, const uint64_t&(const uint64_t& ipts_time));
 };
 
 
