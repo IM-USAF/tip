@@ -514,25 +514,52 @@ TEST_F(Ch10PCMF1ComponentTest, ParseFramesCalculateAbsTimeFail)
     MockCh10Context mock_ctx;
     MockCh10PCMF1Calculations mock_calcs;
     Ch10Time ch10time;
+
     // arbitrary at this stage, just need to ensure that correct vars are passed
     // in the right places
     uint32_t packet_data_size = 456;
-    uint32_t expected_minor_frame_count = 77;
+    uint32_t expected_minor_frame_count = 7;
     uint32_t expected_minor_frame_size_bytes = 298;
     uint32_t minor_frame_count = 0;
     uint32_t minor_frame_size_bytes = 0;
+    uint64_t expected_abs_time = 584882;
     uint64_t abs_time = 0;
 
     EXPECT_CALL(mock_ctx, GetPacketDataSizeBytes()).WillOnce(
         ReturnRef(packet_data_size));
     EXPECT_CALL(mock_calcs, CalculateMinorFrameCount(_, packet_data_size, tmats, 
-        &hdr, _, _)).WillOnce(DoAll(Return(true), 
-        SetArgReferee<3>(expected_minor_frame_count), SetArgReferee<4>(expected_minor_frame_size_bytes)));
+        &hdr, _, _)).WillOnce(DoAll(
+        SetArgReferee<4>(expected_minor_frame_count),
+        SetArgReferee<5>(expected_minor_frame_size_bytes), Return(true)));
     EXPECT_CALL(mock_calcs, CalculateAbsTime(data_ptr_, &ch10time, &mock_ctx, 
-        abs_time)).WillOnce(Return(Ch10Status::INVALID_INTRAPKT_TS_SRC));
+        _)).WillOnce(DoAll(SetArgReferee<3>(expected_abs_time), 
+        Return(Ch10Status::INVALID_INTRAPKT_TS_SRC)));
     EXPECT_EQ(Ch10Status::PCMF1_ERROR, comp_.ParseFrames(&mock_calcs, data_ptr_, 
         tmats, &hdr, &mock_ctx, &ch10time));
 }
+
+// TEST_F(Ch10PCMF1ComponentTest, ParseMinorFrame16Bit)
+// {
+//     PCMF1CSDWFmt hdr{};
+//     Ch10PCMTMATSData tmats;
+//     MockCh10Context mock_ctx;
+//     Ch10Time ch10time;
+//     Ch10PCMF1Calculations calcs;
+
+//     uint32_t packet_data_size = 456;
+//     uint32_t expected_minor_frame_count = 7;
+//     uint32_t expected_minor_frame_size_bytes = 298;
+//     uint32_t minor_frame_count = 0;
+//     uint32_t minor_frame_size_bytes = 0;
+//     uint64_t expected_abs_time = 584882;
+//     uint64_t abs_time = 0;
+
+
+//     PCMF1IPDH16Fmt ipdh;
+//     ipdh.lockst = 0b1011;  // minor frame check, major frame lock
+
+
+// }
 
 TEST_F(Ch10PCMF1ComponentTest, CalculateAbsTimeParseIPTSError)
 {
@@ -585,4 +612,58 @@ TEST_F(Ch10PCMF1ComponentTest, CalculateAbsTime)
         &mock_ctx, abs_time_ns);
     EXPECT_EQ(expected_status, status);
     EXPECT_EQ(expected_abs_time_ns, abs_time_ns);
+}
+
+TEST_F(Ch10PCMF1ComponentTest, ParseSyncPattern16BitInsufficientVectorSizeUnpacked)
+{
+    PCMF1CSDWFmt hdr{};
+    hdr.mode_unpacked = 1;
+    Ch10PCMTMATSData tmats;
+    uint32_t pkt_sync_pattern_len_bytes = 4;
+    std::vector<uint16_t> parsed(1);  // should be (2) 16-bit units
+
+    Ch10PCMF1MinorFrame minframe;
+    EXPECT_FALSE(minframe.ParseSyncPattern16Bit(data_ptr_, 
+        tmats, &hdr, pkt_sync_pattern_len_bytes, parsed)); 
+}
+
+TEST_F(Ch10PCMF1ComponentTest, ParseSyncPattern16BitInsufficientVectorSizePacked)
+{
+    PCMF1CSDWFmt hdr{};
+    hdr.mode_packed = 1;
+    Ch10PCMTMATSData tmats;
+    uint32_t pkt_sync_pattern_len_bytes = 4;
+    tmats.min_frame_sync_pattern_len_ = 35;      
+    std::vector<uint16_t> parsed(1);  // should be (3) 16-bit units
+
+    Ch10PCMF1MinorFrame minframe;
+    EXPECT_FALSE(minframe.ParseSyncPattern16Bit(data_ptr_, 
+        tmats, &hdr, pkt_sync_pattern_len_bytes, parsed)); 
+}
+
+TEST_F(Ch10PCMF1ComponentTest, ParseSyncPattern32BitInsufficientVectorSizeUnpacked)
+{
+    PCMF1CSDWFmt hdr{};
+    hdr.mode_unpacked = 1;
+    Ch10PCMTMATSData tmats;
+    uint32_t pkt_sync_pattern_len_bytes = 9;
+    std::vector<uint32_t> parsed(2);  // should be (3) 32-bit units
+
+    Ch10PCMF1MinorFrame minframe;
+    EXPECT_FALSE(minframe.ParseSyncPattern32Bit(data_ptr_, 
+        tmats, &hdr, pkt_sync_pattern_len_bytes, parsed)); 
+}
+
+TEST_F(Ch10PCMF1ComponentTest, ParseSyncPattern32BitInsufficientVectorSizePacked)
+{
+    PCMF1CSDWFmt hdr{};
+    hdr.mode_packed = 1;
+    Ch10PCMTMATSData tmats;
+    uint32_t pkt_sync_pattern_len_bytes = 4;
+    tmats.min_frame_sync_pattern_len_ = 109;      
+    std::vector<uint32_t> parsed(2);  // should be (4) 32-bit units
+
+    Ch10PCMF1MinorFrame minframe;
+    EXPECT_FALSE(minframe.ParseSyncPattern32Bit(data_ptr_, 
+        tmats, &hdr, pkt_sync_pattern_len_bytes, parsed)); 
 }

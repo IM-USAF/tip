@@ -56,12 +56,16 @@ class Ch10PCMF1MinorFrame
     virtual int GetPacketMinFrameBitCount(const Ch10PCMTMATSData& tmats,
         const PCMF1CSDWFmt* hdr, const int& pkt_sync_pattern_bits);
 
-    /*
-    Handle lock status of minor or major frames. There is no prescription
-    for handling data when lock is not active. Deal with IPDH lock status
-    by skipping the current Ch10 PCMF1 packet given a certain combination
-    of status or simply indicate with warning messages.  
-    */
+
+    virtual bool ParseSyncPattern16Bit(const uint8_t*& data, 
+        const Ch10PCMTMATSData& tmats, const PCMF1CSDWFmt* hdr, 
+        const uint32_t& pkt_sync_pattern_len_bytes,
+        std::vector<uint16_t>& parsed_pattern);
+
+    virtual bool ParseSyncPattern32Bit(const uint8_t*& data, 
+        const Ch10PCMTMATSData& tmats, const PCMF1CSDWFmt* hdr, 
+        const uint32_t& pkt_sync_pattern_len_bytes,
+        std::vector<uint32_t>& parsed_pattern);
 
 };
 
@@ -135,7 +139,7 @@ class Ch10PCMF1Calculations
     Return:
         Ch10status indicating OK if no issues, other status otherwise.
     */
-    Ch10Status CalculateAbsTime(const uint8_t*& data, Ch10Time* const ch10time, 
+    virtual Ch10Status CalculateAbsTime(const uint8_t*& data, Ch10Time* const ch10time, 
         Ch10Context* const ctx, uint64_t& abs_time_ns);
 };
 
@@ -219,10 +223,27 @@ class Ch10PCMF1Component : public Ch10PacketComponent
         const uint8_t*& data, const Ch10PCMTMATSData& tmats,
         const PCMF1CSDWFmt* hdr, Ch10Context* const ctx, Ch10Time* const ch10time);
 
-    // Ch10Status ParsePayload(const uint8_t*& data,
-    //                         const PCMF1DataHeaderCommWordFmt* data_header);
+    /*
+    Parse a 16-bit minor frame, not including the IPTS, which will have been already
+    parsed, until the beginning of the next minor frame. Not relevant for 
+    throughput mode. 
 
-    // uint16_t GetWordCountFromDataHeader(const PCMF1DataHeaderCommWordFmt* data_header);
+    Args:
+ 		data		--> pointer to the first byte in the series of
+						messages
+        calcs       --> Ch10PCMF1Calculations object
+        tmats       --> Ch10PCMTMATSData object containing PCM configuration
+                        relevant to current PCM packet
+        hdr         --> PCMF1CSDWFmt object
+        ctx         --> Ch10Context object
+
+    Return:
+        Ch10Status specific status if error. Ch10Status::OK otherwise.
+    */
+    Ch10Status ParseMinorFrame16Bit(const uint8_t*& data, 
+        Ch10PCMF1Calculations* const calcs, const Ch10PCMTMATSData& tmats, 
+        const PCMF1CSDWFmt* const hdr, Ch10Context* const ctx);
+
 
     /*
     Sanity check on frame indicators. Both minor frame indicator (MI)

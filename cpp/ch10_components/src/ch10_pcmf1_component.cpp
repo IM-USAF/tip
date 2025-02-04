@@ -116,18 +116,46 @@ Ch10Status Ch10PCMF1Component::ParseFrames(Ch10PCMF1Calculations* calcs,
     {
         status_ = calcs->CalculateAbsTime(data, ch10time, ctx, abs_time_);
         if(status_ != Ch10Status::OK)
-            return status_;
+            return Ch10Status::PCMF1_ERROR;
 
         // Parse the intra-packet data header prior to each
         // message payload. The data pointer will be updated to
         // the byte immediately following the header, which is the
         // first byte of the payload.
+        if(hdr->mode_align == 0)  // 16-bit mode
+        {
+
+        }
+        else  // 32-bit. Note that mode has already been checked for valid values
+        {
+
+        }
         // ParseElements(milstd1553f1_ip_data_hdr_elem_vec_, data);
 
     }
 
     return Ch10Status::OK;
 }
+
+Ch10Status Ch10PCMF1Component::ParseMinorFrame16Bit(const uint8_t*& data, 
+        Ch10PCMF1Calculations* const calcs, const Ch10PCMTMATSData& tmats, 
+        const PCMF1CSDWFmt* const hdr, Ch10Context* const ctx)
+{
+    // Parse the second component of the IPH (IPTS + IPDH), the IPDH. 
+
+    // Note: I currently don't understand what to do with the IPDH information.
+    // The IPDH consists of major and minor frame status (not locked, locked, check).
+    // Handle this information in some way and be sure to save it to the parsed
+    // data parquet table. 
+    ParseElements(pcmf1_ip_data_hdr16_elem_vec_, data);
+
+    if (hdr->mode_unpacked)
+    {
+
+    }
+    return Ch10Status::OK;
+}
+
 
 bool Ch10PCMF1Component::CheckFrameIndicator(const uint32_t& throughput, const uint32_t& MI, 
         const uint32_t& MA)
@@ -200,7 +228,11 @@ Ch10Status Ch10PCMF1Calculations::CalculateAbsTime(const uint8_t*& data,
     status_ = ch10time->ParseIPTS(data, ipts_time_, ctx->GetIntrapktTSSrc(),
                                     ctx->GetTimeFormat());
     if (status_ != Ch10Status::OK)
+    {
+        SPDLOG_ERROR("Ch10PCMF1Component::CalculateAbsTime: ParseIPTS "
+            "returned {:s}", Ch10StatusString(status_));
         return status_;
+    }
 
     // Calculate the absolute time using data that were obtained
     // from the IPTS.
@@ -304,4 +336,64 @@ int Ch10PCMF1MinorFrame::GetPacketMinFrameBitCount(const Ch10PCMTMATSData& tmats
     }
 
     return -1;
+}
+
+bool Ch10PCMF1MinorFrame::ParseSyncPattern16Bit(const uint8_t*& data, 
+    const Ch10PCMTMATSData& tmats, const PCMF1CSDWFmt* hdr, 
+    const uint32_t& pkt_sync_pattern_len_bytes,
+    std::vector<uint16_t>& parsed_pattern)
+{
+    if (hdr->mode_unpacked)
+    {
+        if (pkt_sync_pattern_len_bytes > parsed_pattern.size() * 2)
+        {
+            SPDLOG_ERROR("Ch10PCMF1Component::ParseSyncPattern16Bit: (unpacked)"
+                "Sync pattern bytes length: {:d} and only {:d} elements "
+                "in the uint16_t vector", pkt_sync_pattern_len_bytes, 
+                parsed_pattern.size());
+            return false;
+        }
+    }
+    else
+    {
+        if(int(ceil(tmats.min_frame_sync_pattern_len_ / 8)) > (parsed_pattern.size() * 2))
+        {
+            SPDLOG_ERROR("Ch10PCMF1Component::ParseSyncPattern16Bit: (packed)"
+                "Sync pattern bit length: {:d} and only {:d} elements "
+                "in the uint16_t vector", tmats.min_frame_sync_pattern_len_, 
+                parsed_pattern.size());
+            return false;
+        }
+    }
+    return true;
+}
+
+bool Ch10PCMF1MinorFrame::ParseSyncPattern32Bit(const uint8_t*& data, 
+    const Ch10PCMTMATSData& tmats, const PCMF1CSDWFmt* hdr, 
+    const uint32_t& pkt_sync_pattern_len_bytes,
+    std::vector<uint32_t>& parsed_pattern)
+{
+    if (hdr->mode_unpacked)
+    {
+        if (pkt_sync_pattern_len_bytes > parsed_pattern.size() * 4)
+        {
+            SPDLOG_ERROR("Ch10PCMF1Component::ParseSyncPattern32Bit: (unpacked)"
+                "Sync pattern bytes length: {:d} and only {:d} elements "
+                "in the uint32_t vector", pkt_sync_pattern_len_bytes, 
+                parsed_pattern.size());
+            return false;
+        }
+    }
+    else
+    {
+        if(int(ceil(tmats.min_frame_sync_pattern_len_ / 8)) > (parsed_pattern.size() * 4))
+        {
+            SPDLOG_ERROR("Ch10PCMF1Component::ParseSyncPattern32Bit: (packed)"
+                "Sync pattern bit length: {:d} and only {:d} elements "
+                "in the uint32_t vector", tmats.min_frame_sync_pattern_len_, 
+                parsed_pattern.size());
+            return false;
+        }
+    }
+    return true;
 }
